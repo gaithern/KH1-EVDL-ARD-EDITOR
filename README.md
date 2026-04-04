@@ -77,3 +77,34 @@ The EVDL editor allows you to modify object behavior using BDX-style scripting.
 - Y position is handled automatically by the engine
 - Values may be interpreted as **floats internally**
 - Some scripts split values.
+
+## Example Script (EVDL)
+
+Below is a real example of a BD script that continuously scales an object up and down:
+
+```asm
+[ 7960]  1F000909  push            0x9001F           ; 589855
+[ 7961]  0A000018  syscall         10                ; Set_char_ID
+[ 7962]  10000005  yield           0x10            
+
+[ 7963]  C8000009  push            0xC8              ; 200
+[ 7964]  C8000009  push            0xC8              ; 200
+[ 7965]  C8000009  push            0xC8              ; 200
+[ 7966]  C8000009  push            0xC8              ; 200
+[ 7967]  78000009  push            0x78              ; 120
+[ 7968]  7A000018  syscall         122               ; Change_char_scale
+
+[ 7969]  78000009  push            0x78              ; 120
+[ 7970]  08000018  syscall         8                 ; Set_wait_timer
+
+[ 7971]  32000009  push            0x32              ; 50
+[ 7972]  32000009  push            0x32              ; 50
+[ 7973]  32000009  push            0x32              ; 50
+[ 7974]  32000009  push            0x32              ; 50
+[ 7975]  78000009  push            0x78              ; 120
+[ 7976]  7A000018  syscall         122               ; Change_char_scale
+
+[ 7977]  78000009  push            0x78              ; 120
+[ 7978]  08000018  syscall         8                 ; Set_wait_timer
+
+[ 7979]  F0FFFF02  jmp             -16               ; → PC 7963
