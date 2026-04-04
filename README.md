@@ -80,7 +80,7 @@ The EVDL editor allows you to modify object behavior using BDX-style scripting.
 
 ## Example Script (EVDL)
 
-Below is a real example of a BD script that continuously scales an object up and down:
+Below is a real example of a EVDL script that continuously scales an object up and down:
 
 ```asm
 [ 7960]  1F000909  push            0x9001F           ; 589855
