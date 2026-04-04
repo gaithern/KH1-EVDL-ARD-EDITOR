@@ -1,6 +1,6 @@
 # KH1 ARD & EVDL Editor
 
-A lightweight web-based toolset for editing **ARD (map/entity data)** and **EVDL (event/script logic)** files used in *Kingdom Hearts I*.
+A lightweight web-based toolset for editing **ARD (map/entity data)** and **EVDL (event/script logic)** files used in *Kingdom Hearts I*. Made by gg3502
 
 ---
 
