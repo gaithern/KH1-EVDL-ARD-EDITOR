@@ -1,0 +1,2454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>KH1 EVDL Script Editor</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap');
+:root{--bg:#0a0c10;--panel:#0e1117;--border:#1c2333;--accent:#00d4ff;--a2:#ff6b35;--a3:#7b2fff;--text:#c8d6e5;--muted:#c8a800;--green:#00ff9f;--red:#ff3860;--yellow:#ffdd57;}
+body.light{--bg:#f0f2f5;--panel:#ffffff;--border:#c8cdd8;--accent:#0077aa;--a2:#cc4400;--a3:#6600cc;--text:#1a1e2a;--muted:#7a5800;--green:#006633;--red:#cc0033;--yellow:#996600;}
+body.light::before{display:none;}
+body.light header{background:linear-gradient(90deg,#e0e4ec,#eef0f5,#e0e4ec);}
+body.light .chl{background:#f8f9fc;}
+body.light #ca,body.light #hca{background:transparent;}
+body.light .lnums{background:#eef0f5;}
+body.light .sbar{background:#e8eaf0;}
+body.light .dz{background:#f8f9fc;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',monospace;font-size:12px;height:100vh;overflow:hidden;display:flex;flex-direction:column;}
+body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.03) 2px,rgba(0,0,0,.03) 4px);pointer-events:none;z-index:9999;}
+header{background:linear-gradient(90deg,#080b12,#0e1520,#080b12);border-bottom:1px solid var(--accent);padding:9px 18px;display:flex;align-items:center;gap:14px;box-shadow:0 0 28px rgba(0,212,255,.15);flex-shrink:0;}
+header h1{font-family:'Orbitron',monospace;font-size:15px;font-weight:900;color:var(--accent);text-shadow:0 0 18px rgba(0,212,255,.6);letter-spacing:2px;}
+.hdr-sub{color:var(--muted);font-size:9px;letter-spacing:1px;}
+.hdr-r{margin-left:auto;display:flex;gap:7px;align-items:center;}
+.btn{font-family:'Share Tech Mono',monospace;font-size:11px;padding:5px 13px;border:1px solid;cursor:pointer;letter-spacing:1px;text-transform:uppercase;transition:all .15s;background:transparent;text-decoration:none;display:inline-block;}
+.btn-a{border-color:var(--accent);color:var(--accent);}
+.btn-a:hover{background:rgba(0,212,255,.1);box-shadow:0 0 10px rgba(0,212,255,.3);}
+.btn-g{border-color:var(--green);color:var(--green);}
+.btn-g:hover{background:rgba(0,255,159,.1);}
+.btn-o{border-color:var(--a2);color:var(--a2);}
+.btn-o:hover{background:rgba(255,107,53,.1);}
+.btn-r{border-color:var(--red);color:var(--red);}
+.btn-r:hover{background:rgba(255,56,96,.1);}
+.btn:disabled{opacity:.3;cursor:not-allowed;}
+.toolbar{background:var(--panel);border-bottom:1px solid var(--border);padding:5px 12px;display:flex;gap:7px;align-items:center;flex-wrap:wrap;flex-shrink:0;}
+.layout{display:grid;grid-template-columns:210px 1fr;flex:1;overflow:hidden;}
+.lpanel{background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;}
+.phdr{padding:7px 11px;border-bottom:1px solid var(--border);font-family:'Orbitron',monospace;font-size:9px;color:var(--accent);letter-spacing:2px;display:flex;align-items:center;gap:5px;}
+.phdr .dot{width:5px;height:5px;border-radius:50%;background:var(--accent);box-shadow:0 0 5px var(--accent);}
+.kgr-list{overflow-y:auto;flex:1;}
+.ki{padding:5px 11px;cursor:pointer;border-bottom:1px solid rgba(28,35,51,.5);font-size:11px;display:flex;align-items:center;gap:7px;transition:background .1s;}
+.ki:hover{background:rgba(0,212,255,.05);}
+.ki.active{background:rgba(0,212,255,.1);border-left:2px solid var(--accent);color:var(--accent);}
+.ki.mod{color:var(--yellow);}
+.kbadge{margin-left:auto;color:var(--muted);font-size:9px;}
+.mpanel{display:flex;flex-direction:column;overflow:hidden;}
+.etbar{padding:5px 11px;border-bottom:1px solid var(--border);background:var(--panel);display:flex;gap:7px;align-items:center;font-size:11px;flex-shrink:0;}
+.findbar{display:none;padding:4px 11px;border-bottom:1px solid var(--border);background:var(--panel);gap:7px;align-items:center;}
+.findbar.vis{display:flex;}
+.findbar input{background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:'Share Tech Mono',monospace;font-size:11px;padding:3px 7px;outline:none;width:190px;}
+.findbar input:focus{border-color:var(--accent);}
+.fcount{color:var(--muted);font-size:10px;min-width:55px;}
+.cwrap{flex:1;overflow:auto;display:flex;}
+.lnums{background:#060810;border-right:1px solid var(--border);padding:7px 0;min-width:46px;text-align:right;color:var(--muted);font-size:11px;line-height:1.55;user-select:none;flex-shrink:0;overflow:hidden;}
+.lnums div{padding:0 7px;}
+.ceditor{flex:1;position:relative;}
+textarea#ca,textarea#hca{width:100%;height:100%;background:transparent;border:none;outline:none;color:transparent;caret-color:var(--accent);font-family:'Share Tech Mono',monospace;font-size:11px;line-height:1.55;padding:7px 11px;resize:none;position:absolute;top:0;left:0;z-index:2;white-space:pre;overflow-wrap:normal;overflow-x:auto;}
+.chl{width:100%;height:100%;background:var(--bg);font-family:'Share Tech Mono',monospace;font-size:11px;line-height:1.55;padding:7px 11px;position:absolute;top:0;left:0;z-index:1;white-space:pre;overflow:hidden;pointer-events:none;}
+/* syntax — dark mode */
+.hp{color:#5a6a8a;}            /* PC numbers */
+.hb{color:#4a8fa0;}            /* hex bytes */
+.ho{color:var(--accent);}      /* opcodes */
+.hsy{color:#40d090;}           /* syscall opcode */
+.hau{color:#ff9fd4;}           /* alu */
+.hpu{color:#ff8c55;}           /* push / push_cond */
+.hbr{color:#f0c040;}           /* branches jmp/beqz */
+.hm{color:#a87eff;}            /* memory ops */
+.hfl{color:#7ec8e3;}           /* flow: yield/init_call etc */
+.hcm{color:#5a7a55;}           /* comments — readable green-grey */
+.hlb{color:#f0c040;font-weight:bold;} /* label defs */
+.hsc{color:#60b8d0;font-style:italic;} /* script headers */
+.hbn{color:#3a4a5a;}           /* banners/separators */
+.hop{color:var(--text);}       /* operands */
+/* light mode syntax overrides */
+body.light .hp{color:#8899bb;}
+body.light .hb{color:#2277aa;}
+body.light .ho{color:#005588;}
+body.light .hsy{color:#006622;}
+body.light .hau{color:#cc3377;}
+body.light .hpu{color:#bb4400;}
+body.light .hbr{color:#886600;}
+body.light .hm{color:#5500bb;}
+body.light .hfl{color:#226688;}
+body.light .hcm{color:#448833;}
+body.light .hlb{color:#886600;font-weight:bold;}
+body.light .hsc{color:#005588;font-style:italic;}
+body.light .hbn{color:#aabbcc;}
+body.light .hop{color:var(--text);}
+.errpanel{background:#0a0005;border-top:2px solid var(--red);padding:6px 12px;font-size:11px;max-height:110px;overflow-y:auto;flex-shrink:0;display:none;}
+.el{color:var(--red);line-height:1.8;} .wl{color:var(--yellow);line-height:1.8;}
+.sbar{padding:3px 12px;background:#060810;border-top:1px solid var(--border);font-size:10px;display:flex;gap:7px;align-items:center;flex-shrink:0;}
+.sok{color:var(--green);} .swn{color:var(--yellow);} .ser{color:var(--red);} .ssep{color:#1c2333;}
+.dz{border:2px dashed var(--border);color:var(--muted);padding:40px;text-align:center;margin:40px;transition:all .2s;}
+.dz.over{border-color:var(--accent);color:var(--accent);background:rgba(0,212,255,.05);}
+.dz h2{font-family:'Orbitron',monospace;margin-bottom:10px;color:var(--accent);}
+.dc{background:rgba(255,221,87,.1);border:1px solid rgba(255,221,87,.3);color:var(--yellow);padding:2px 7px;font-size:10px;}
+.cb{background:rgba(0,212,255,.1);border:1px solid rgba(0,212,255,.3);color:var(--accent);padding:2px 7px;font-size:10px;}
+/* Call graph hover styles */
+.cg-entry:hover{background:rgba(0,212,255,0.06);border-color:var(--accent)!important;}
+.cg-link:hover{background:rgba(0,212,255,0.1);border-radius:2px;text-decoration:underline;}
+.hc-kw{color:var(--yellow);}        /* script while if else for return */
+.hc-fn{color:var(--accent);}        /* syscall names */
+.hc-num{color:#ff9fd4;}             /* numbers 0x... */
+.hc-cm{color:#5a7a55;}             /* comments */
+.hc-str{color:var(--green);}        /* strings */
+.hc-op{color:var(--accent2);}       /* operators */
+.hc-asm{color:var(--muted);}        /* asm{} block content */
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--border);}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>▸ EVDL SCRIPT EDITOR</h1>
+    <div class="hdr-sub">KH1 FINAL MIX PC · EVDL/KGR SCRIPT EDITOR</div>
+  </div>
+  <div class="hdr-r">
+    <span id="fileName" style="color:var(--muted);font-size:11px">No file loaded</span>
+    <button class="btn btn-a" id="themeBtn" onclick="toggleTheme()" title="Toggle light/dark mode">☀ LIGHT</button>
+    <button class="btn btn-a" onclick="document.getElementById('fi').click()">OPEN FILE</button>
+    <input type="file" id="fi" style="display:none">
+    <button class="btn btn-r" id="closeBtn" style="display:none" onclick="closeFile()">CLOSE FILE</button>
+    <button class="btn btn-g" id="exportBtn" disabled onclick="exportFile()" title="Export current in-memory state without assembling">EXPORT AS-IS</button>
+    <button class="btn btn-a" id="compareBtn" disabled onclick="document.getElementById('compareInput').click()" title="Compare current KGR with another file">COMPARE</button>
+    <input type="file" id="compareInput" style="display:none" onchange="doCompare(this)">
+    <a href="ard_editor.html" class="btn btn-a" onclick="saveStateAndNav(event,'ard_editor.html')">▸ ARD EDITOR</a>
+  </div>
+</header>
+
+<div id="mainUI" style="display:none;flex:1;overflow:hidden;flex-direction:column">
+  <div class="toolbar">
+    <button class="btn btn-o" id="asmBtn" onclick="setMode('asm')">ASM MODE</button>
+    <button class="btn btn-a" id="hlBtn" onclick="setMode('hl')" style="border-color:var(--muted);color:var(--muted)">EVDL-C MODE</button>
+    <button class="btn btn-a" id="cfgBtn" onclick="setMode('cfg')" style="border-color:var(--muted);color:var(--muted)">CFG VIEW</button>
+    <span class="ssep">|</span>
+    <span id="asmToolbar">
+      <button class="btn btn-o" onclick="assembleOnly()" title="Ctrl+Enter">ASSEMBLE  Ctrl+Enter</button>
+      <button class="btn btn-g" id="saveBtn" disabled onclick="exportFile()" title="Ctrl+S">SAVE  Ctrl+S</button>
+      <button class="btn btn-r" onclick="revertKgr()">REVERT KGR</button>
+      <button class="btn btn-a" onclick="toggleFind()">FIND  Ctrl+F</button>
+      <button class="btn btn-a" id="cgBtn" onclick="toggleCallGraph()">CALL GRAPH</button>
+      <button class="btn btn-g" onclick="insertNewScript()" title="Append a blank script template at the end of the KGR">+ NEW SCRIPT</button>
+      <span style="color:var(--muted);font-size:10px;margin-left:4px">· <span style="color:var(--yellow)">comments regenerated on assemble</span> · <span style="color:var(--accent)">Ctrl+click</span> init_call/await_call to jump</span>
+    </span>
+    <span id="hlToolbar" style="display:none">
+      <button class="btn btn-o" onclick="hlCompileAndSave()">COMPILE + SAVE  Ctrl+S</button>
+      <button class="btn btn-a" onclick="hlPreview()">PREVIEW ASM</button>
+      <button class="btn btn-r" onclick="hlDecompile()">DECOMPILE CURRENT KGR</button>
+      <span style="color:var(--muted);font-size:10px;margin-left:4px">· write high-level EVDL-C · <span style="color:var(--accent)">script{}</span> blocks · syscall names · <span style="color:var(--yellow)">while/if/for</span></span>
+    </span>
+    <div style="margin-left:auto;display:flex;gap:7px;align-items:center">
+      <div class="dc" id="dc" style="display:none">0 modified</div>
+      <div class="cb" id="ic">0 instrs</div>
+    </div>
+  </div>
+  <div class="findbar" id="fb">
+    <input id="fi2" placeholder="Find in script..." oninput="doFind()" onkeydown="fk(event)">
+    <span class="fcount" id="fc"></span>
+    <button class="btn btn-a" style="padding:2px 9px" onclick="findNext()">↓</button>
+    <button class="btn btn-a" style="padding:2px 9px" onclick="findPrev()">↑</button>
+    <button id="scopeBtn" class="btn btn-a" style="padding:2px 9px;min-width:80px" onclick="toggleScope()">THIS KGR</button>
+    <button class="btn btn-r" style="padding:2px 9px" onclick="closeFind()">✕</button>
+  </div>
+  <div class="layout">
+    <div class="lpanel">
+      <div class="phdr"><div class="dot"></div>KGR SECTIONS</div>
+      <div class="kgr-list" id="kl"></div>
+    </div>
+    <div class="mpanel">
+      <div style="display:flex;flex:1;min-height:0;overflow:hidden">
+        <div style="flex:1;display:flex;flex-direction:column;min-width:0;overflow:hidden">
+          <!-- ASM editor -->
+          <div id="asmPanel" class="cwrap" style="flex:1;min-height:0;overflow:hidden">
+            <div class="lnums" id="ln"></div>
+            <div class="ceditor">
+              <div class="chl" id="ch" aria-hidden="true"></div>
+              <textarea id="ca" spellcheck="false" oninput="onInput()" onscroll="syncS()" onkeydown="onKey(event)" onclick="onAsmClick(event)" onkeyup="updCursor()"></textarea>
+            </div>
+          </div>
+          <!-- EVDL-C editor -->
+          <div id="hlPanel" class="cwrap" style="display:none;flex:1;min-height:0;overflow:hidden">
+            <div class="lnums" id="hln"></div>
+            <div class="ceditor">
+              <div class="chl" id="hch" aria-hidden="true"></div>
+              <textarea id="hca" spellcheck="false" oninput="onHlInput()" onscroll="syncHlS()" onkeydown="onHlKey(event)" onclick="updHlCursor()" onkeyup="updHlCursor()" placeholder="// EVDL-C high-level script
+// Example:
+script spawn_entity() {
+    set_char_id(0x30007);
+    char_ctrl_off();
+    char_bg_off();
+    yield(1);
+    while(true) { yield(1); }
+}"></textarea>
+            </div>
+          </div>
+          <!-- CFG view -->
+          <div id="cfgPanel" style="display:none;flex:1;min-height:0;overflow:hidden;flex-direction:column">
+            <div id="cfgToolbar" style="padding:5px 10px;background:var(--panel);border-bottom:1px solid var(--border);display:flex;gap:8px;align-items:center;flex-shrink:0">
+              <span style="color:var(--muted);font-size:10px">SCRIPT:</span>
+              <select id="cfgScriptSel" style="background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:'Share Tech Mono',monospace;font-size:10px;padding:2px 6px" onchange="cfgSelectScript(parseInt(this.value))"></select>
+              <span style="color:var(--muted);font-size:10px;margin-left:8px">drag · scroll zoom · click block→jump to ASM</span>
+              <button class="btn btn-a" style="padding:2px 8px;font-size:10px;margin-left:auto" onclick="cfgResetView()">RESET VIEW</button>
+            </div>
+            <canvas id="cfgCanvas" style="flex:1;min-height:0;display:block;cursor:grab;width:100%"></canvas>
+          </div>
+          <div id="previewPanel" style="display:none;flex:1;overflow:auto;background:var(--bg);font-family:'Share Tech Mono',monospace;font-size:11px;padding:8px 12px;border-left:2px solid var(--accent)">
+            <div style="color:var(--accent);font-size:9px;letter-spacing:2px;margin-bottom:8px;font-family:'Orbitron',monospace">ASM PREVIEW</div>
+            <pre id="previewContent" style="color:var(--text);white-space:pre-wrap;margin:0"></pre>
+            <button class="btn btn-r" style="margin-top:8px;padding:2px 8px;font-size:10px" onclick="document.getElementById('previewPanel').style.display='none'">CLOSE</button>
+          </div>
+          <!-- Compare panel -->
+          <div id="comparePanel" style="display:none;position:absolute;top:0;left:0;right:0;bottom:0;background:var(--bg);z-index:20;overflow:auto;border:2px solid var(--accent)"></div>
+        </div>
+        <!-- Call graph sidebar -->
+        <div id="cgPanel" style="display:none;width:280px;flex-shrink:0;border-left:2px solid var(--accent);background:var(--panel);overflow-y:auto;font-family:'Share Tech Mono',monospace;font-size:11px;">
+          <div style="padding:6px 10px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px">
+            <span style="font-family:'Orbitron',monospace;font-size:9px;color:var(--accent);letter-spacing:2px">CALL GRAPH</span>
+            <button class="btn btn-r" style="margin-left:auto;padding:1px 7px;font-size:10px" onclick="toggleCallGraph()">✕</button>
+          </div>
+          <div id="cgContent" style="padding:8px 10px"></div>
+        </div>
+      </div>
+      <div class="errpanel" id="ep"></div>
+      <div class="sbar">
+        <span class="sok">READY</span><span class="ssep">|</span>
+        <span id="st">Open an .evdl or .ard file to begin</span>
+        <span class="ssep" style="margin-left:auto">|</span>
+        <span id="cp" style="color:var(--muted)">Ln 1, Col 1</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="dz" class="dz">
+  <h2>DROP EVDL OR ARD FILE HERE</h2>
+  <p>or click <strong>OPEN FILE</strong> above</p>
+  <p style="margin-top:10px;font-size:10px;color:var(--muted)">Supports: .evdl standalone · .ard area containers (extracts embedded KGR sections)</p>
+  <div id="dzerr" style="display:none;margin-top:14px;color:var(--red);font-size:11px;border:1px solid var(--red);padding:8px 14px;background:rgba(255,56,96,0.08)"></div>
+</div>
+
+<script>
+'use strict';
+// ═══════════════════════ TABLES ═══════════════════════════
+const OPCODES={0:'nop',1:'alu',2:'jmp',3:'beqz',4:'nop',5:'yield',6:'store_reg',7:'cmp_reg_imm',8:'dec_reg_idx',9:'push',10:'load_local',11:'store_local',12:'read_byte',13:'write_byte',14:'read_word',15:'write_word',16:'read_dword',17:'write_dword',18:'nop',19:'nop',20:'nop',21:'push_cond',22:'init_call',23:'await_call',24:'syscall',25:'flow_ctrl',26:'set_lt',27:'set_le',28:'set_gt',29:'set_ge',30:'read_bit',31:'write_bit'};
+const VALID_OPS=new Set(Object.keys(OPCODES).map(Number));
+const ALU_OPS={0:'add',1:'sub',2:'mul',3:'div',4:'mod',5:'and',6:'or',7:'xor',8:'not',9:'neg',10:'shl',11:'shr'};
+const ALU_BY_NAME=Object.fromEntries(Object.entries(ALU_OPS).map(([k,v])=>[v,+k]));
+const SYSCALLS={0:'Open_window',1:'Display_message',2:'Close_window',3:'Set_window_position',4:'Set_window_size',5:'Set_window_type',6:'Set_window_opening_speed',7:'Set_message_display_speed',8:'Set_wait_timer',9:'Display_register_value',10:'Set_char_ID',11:'Move_char',12:'Rotate_char',13:'Change_motion',14:'Event_occurs',15:'Event_ends',16:'Get_char_pos_X',17:'Get_char_pos_Y',18:'Get_char_pos_Z',19:'Set_char_position',20:'Wait_move_done',21:'Show_char',22:'Hide_char',23:'Show_char_shadow',24:'Hide_char_shadow',25:'Collision_on',26:'Collision_off',27:'Fade_in',28:'Fade_out',29:'White_in',30:'White_out',31:'Blur_on',32:'Blur_off',33:'Wait_message_end',34:'Play_camera_motion',35:'Set_camera_position',36:'Set_camera_focus_position',37:'Rotate_camera',38:'Set_camera_distance',39:'Set_camera_fov',40:'Get_camera_focus_X',41:'Get_camera_focus_Y',42:'Get_camera_focus_Z',43:'Get_camera_rot_X',44:'Get_camera_rot_Y',45:'Get_camera_rot_Z',46:'Get_camera_distance',47:'Get_camera_fov',48:'Start_effect',49:'Move_camera_focus',50:'Move_camera_rotation',51:'Move_camera_distance',52:'Move_camera_fov',53:'Char_jump',54:'Char_ctrl_on',55:'Char_ctrl_off',56:'Motion_ctrl_on',57:'Motion_ctrl_off',58:'Change_motion_interp',59:'Change_map',60:'Change_area',61:'Get_event_starter_ID',62:'Group_display_on',63:'Group_display_off',64:'Set_var_1',65:'Set_var_0',66:'Inc_var',67:'Dec_var',68:'Random_value',69:'Turn_char',70:'Turn_char_left',71:'Turn_char_right',72:'Add_light',73:'Light_type',74:'Light_position',75:'Light_direction',76:'Light_color',77:'Point_light_distance',78:'Spot_light_angle',79:'Remove_light',80:'Set_window_tail_type',81:'Set_window_tail_location',82:'Set_window_tail_rotation',83:'Set_window_close_speed',84:'Widescreen_on',85:'Widescreen_off',86:'Change_motion_frame',87:'Pause_motion',88:'Enter_selection_mode',89:'Wait_selection',90:'Change_char_color',91:'Restore_char_color',92:'Load_event_motion',93:'Wait_file_load',94:'Set_event_motion',95:'Set_battle_motion',96:'Hide_body_parts',97:'Show_body_parts',98:'Wait_turn_end',99:'Turn_to_position',100:'Save_crossfade_image',101:'Start_crossfade',102:'Camera_vibration',103:'Wait_motion_end',104:'Char_bg_on',105:'Char_bg_off',106:'Wait_event_camera_end',107:'Wait_message_end_ID',108:'Motion_change_no_loop',109:'Start_texture_animation',110:'Motion_change_no_loop_interp',111:'Motion_change_no_loop_frame',112:'Gauge_on',113:'Gauge_off',114:'Command_display_on',115:'Command_display_off',116:'Change_blur_alpha',117:'Change_blur_color',118:'Change_blur_width',119:'Change_blur_height',120:'Default_shadow_light_on',121:'Default_shadow_light_off',122:'Change_char_scale',123:'Play_partial_motion',124:'Play_voice',125:'Stop_voice',126:'Trigger_event',127:'Get_world_number',128:'Get_area_number',129:'Get_set_number',130:'Change_map_whiteout',131:'Change_area_whiteout',132:'Set_attribute_on',133:'Set_attribute_off',134:'Write_set_number',135:'Keyhole_fade_out',136:'Event_SRAM_flag_on',137:'Event_SRAM_flag_off',138:'Get_event_SRAM_flag',139:'Widescreen_on_quick',140:'Widescreen_off_quick',141:'Weapon_display_on',142:'Weapon_display_off',143:'Stage_destruction_effect',144:'Check_map_jump_press',145:'Check_map_jump_motion',146:'Check_map_landing',147:'Play_camera_motion_local',148:'Play_camera_motion_local_rot',149:'Force_quit_script',150:'All_char_ctrl_on',151:'All_char_ctrl_off',152:'Check_char_on_stage',153:'Change_window_coords',154:'Restore_camera',155:'Add_bg_light',156:'Restore_camera_default',157:'Move_noturn',158:'Set_valid_key_input',159:'Clear_valid_key_input',160:'Switch_to_battle_mode',161:'Switch_to_normal_mode',162:'Clear_event_effect',163:'Start_resident_effect',164:'Clear_resident_effect',165:'Load_event_effect',166:'Wait_event_effect_load',167:'Change_resident_effect_coords',168:'Blur_on2',169:'Blur_off2',170:'Blur_type',171:'Blur_distance',172:'Get_pad_buttons',173:'Get_pad_trigger',174:'Play_camera_motion_local_rot_2actors',175:'Face_actor',176:'Pauseflag_off',177:'Open_window_no_close',178:'Activate_title_effect',179:'Start_talk_camera',180:'End_talk_camera',181:'Load_model',182:'Wait_model_load',183:'Display_model',184:'Rotate_blur',185:'Move_blur',186:'Clear_loaded_effect_ID',187:'Clear_resident_effect_ID',188:'Set_loaded_effect_location',189:'Set_loaded_effect_location_bone',190:'Play_SE',191:'Stop_SE',192:'Get_distance_2axis',193:'Get_distance_3axis',194:'Get_actor_distance_2axis',195:'Get_actor_distance_3axis',196:'Set_resident_effect_location_bone',197:'Get_current_command',198:'Set_command_speak_range',199:'Set_command_check_range',200:'Enable_menu_display',201:'Disable_menu_display',202:'Get_angle_actor_to_coord',203:'Get_angle_between_actors',204:'Fade_image_in',205:'Fade_image_out',206:'Set_image_offset',207:'Set_image_scale',208:'Set_camera_speed',209:'Set_motion_speed',210:'Set_effect_speed',211:'Set_object_far_clip',212:'Pause_actor',213:'Resume_actor',214:'Backload_test_event_motion',215:'Set_frame_color',216:'Start_frame_coloring',217:'Stop_frame_coloring',218:'Turn_head_angle',219:'Turn_head_coords',220:'Turn_head_actor',221:'Restore_head',222:'Open_shop_buy',223:'Wait_shop_close',224:'Move_jump',225:'Display_record',226:'Hide_record',227:'Show_timer',228:'Hide_timer',229:'Start_timer_up',230:'Start_timer_down',231:'Pause_timer',232:'Restart_timer',233:'Stop_timer',234:'Set_max_counter',235:'Inc_counter',236:'Show_counter',237:'Hide_counter',238:'Start_minigame',239:'End_minigame',240:'Show_ranking',241:'Start_hercules_event',242:'Reset_timer',243:'Message_to_battle_script',244:'Load_image',245:'Wait_image_load',246:'Display_image',247:'Hide_image',248:'Scroll_image_Y',249:'Load_BGM',250:'Wait_BGM_load',251:'Play_BGM',252:'Restore_BGM',253:'Check_bag_item_count',254:'Set_loaded_effect_start_frame',255:'Set_resident_effect_start_frame',256:'Load_voice',257:'Wait_voice_load',258:'Change_bag_items',259:'Check_char_in_area',260:'Start_vibration',261:'Stop_vibration',262:'Clipping_on',263:'Clipping_off',264:'Set_motion_null_to_char_pos',265:'Set_char_run_speed',266:'Reset_char_run_speed',267:'Change_char_weight',268:'Open_shop_sell',269:'Add_party_member',270:'Remove_party_member',271:'Get_motion_null_X',272:'Get_motion_null_Y',273:'Get_motion_null_Z',274:'Go_to_world_map',275:'Hercules_win_menu',276:'Hercules_lose_menu',277:'Hercules_champion_menu',278:'Game_over',279:'Quick_save',280:'Move_slow',281:'Get_part_from_party',282:'Display_black_image',283:'Display_new_record',284:'Push_actor_coord_X',285:'Push_actor_coord_Y',286:'Push_actor_coord_Z',287:'Push_actor_rotation',288:'Push_runlevel',289:'Push_motion_frames',290:'Push_actor_coord_X2',291:'Push_actor_coord_Y2',292:'Push_actor_coord_Z2',293:'Push_actor_rotation2',294:'Push_runlevel2',295:'Push_motion_frames2',296:'Fade_in_image_black_bg',297:'Fade_out_image_black_bg',298:'Cancel_movement',299:'Move_to_actor_pos',300:'Enable_game_over',301:'Disable_game_over',302:'Keyhole_fade_in',303:'End_keyhole_fade',304:'Set_sky_initial_rotation',305:'Get_minigame_menu_selection',306:'Set_char_initial_state',307:'Call_sin',308:'Call_cos',309:'Check_char_in_camera',310:'Check_battle_or_normal_mode',311:'Get_camera_viewpoint_X',312:'Get_camera_viewpoint_Y',313:'Get_camera_viewpoint_Z',314:'Get_attack_type_ID',315:'Erase_all_map_objects',316:'Show_all_map_objects',317:'Fade_in_3D',318:'Fade_out_3D',319:'Discard_object_data',320:'Enable_targeting',321:'Disable_targeting',322:'Get_motion_number',323:'Add_HP',324:'Add_MP',325:'Wait_all_enemies_defeated',326:'Enable_magic_command',327:'Disable_magic_command',328:'Enable_item_command',329:'Disable_item_command',330:'Enable_summon_command',331:'Disable_summon_command',332:'Set_counter_value',333:'Get_holdable_count',334:'Check_first_person_view',335:'Make_not_invincible',336:'Make_invincible',337:'Make_pressable',338:'Make_non_pressable',339:'Set_treasure_flag',340:'Get_treasure_flag',341:'Get_treasure_number',342:'Get_treasure_type',343:'Get_treasure_value',344:'Erase_treasure',345:'Get_treasure_ID',346:'Enemy_ctrl_on',347:'Enemy_ctrl_off',348:'Activate_battle_effects',349:'Set_battle_effect_to_bone',350:'Set_party',351:'Move_smooth_rot',352:'Change_game_speed',353:'Play_SE2',354:'Set_little_mermaid_water_speed',355:'Get_comm_ID',356:'Get_comm_Num',357:'Set_comm_work',358:'Display_item_acquired_message',359:'Display_money_acquired_message',360:'Disable_battle_event_box',361:'Enable_battle_event_box',362:'Disable_all_battle_event_boxes',363:'Enable_all_battle_event_boxes',364:'Set_item_number_in_message',365:'Set_window_width_auto',366:'Get_party_count',367:'Display_prize',368:'Hide_prize',369:'Delete_prize',370:'Return_to_title',371:'Change_effect_rotation',372:'Change_effect_scale',373:'Change_resident_effect_rotation',374:'Change_resident_effect_scale',375:'Make_not_invincible_actor',376:'Make_invincible_actor',377:'Make_inoperable',378:'Make_operable',379:'Get_char_current_area',380:'End_effect_loop',381:'End_resident_effect_loop',382:'Add_event_box',383:'Count_objects_by_part',384:'Load_event_SE',385:'Wait_event_SE_load',386:'Delete_event_box',387:'Get_char_HP',388:'Get_char_MP',389:'Write_set_number_from_table',390:'Start_BGSE',391:'Stop_BGSE',392:'Call_name_input',393:'Get_char_weight',394:'Hold_camera_info',395:'Get_camera_info',396:'Fisheye_on',397:'Fisheye_off',398:'Map_display_on',399:'Map_display_off',400:'Set_camera_parameters',401:'Reset_camera_parameters',402:'Stealth_on',403:'Stealth_off',404:'Get_motion_number_actor',405:'Load_waveform',406:'Wait_waveform_load',407:'Party_gauge_on',408:'Party_gauge_off',409:'Restore_SE',410:'Wait_restore_music',411:'Get_ground_color_from_area',412:'Set_ground_color_to_polygon',413:'Quick_save_on',414:'Quick_save_off',415:'Stop_BGM',416:'Add_battle_item',417:'Pad_ctrl_on',418:'Pad_ctrl_off',419:'GetLength_2',420:'GetLength3_2',421:'GetLengthA_2',422:'GetLength3A_2',423:'Char_request_on',424:'Char_request_off',425:'Stop_SE_all',426:'Erase_all_enemies',427:'Change_BGM_volume',428:'Add_MP_charge',429:'MP_charge_on',430:'MP_charge_off',431:'Motion_sound_on',432:'Motion_sound_off',433:'Ground_sound_on',434:'Ground_sound_off',435:'Play_effect_sound',436:'Stop_effect_sound',437:'Show_object_from_CALLNUM',438:'Check_Sora_on_ground',439:'Get_enemies_killed',440:'Reset_enemies_killed',441:'Disable_battle_mode_entry',442:'Enable_battle_mode_entry',443:'Wait_voice_finish',444:'Increase_money',445:'Load_next_map_texture',446:'Set_effect_rotation_from_bone',447:'Set_effect_rotation_from_bone2',448:'Enemy_view_off',449:'Enemy_view_on',450:'Load_all_objects_CALLNUM',451:'Wait_all_objects_CALLNUM',452:'Get_MAPOBJ_BG_color',453:'Get_distance_to_nearest_enemy',454:'Set_special_command',455:'Get_special_command_count',456:'Display_defeated_enemy_count',457:'Get_enemies_in_zone',458:'Load_magic',459:'Wait_magic_load',460:'Get_magic_level',461:'Load_all_objects_zone',462:'Wait_zone_load',463:'Set_special_thread_return',464:'Move_jump_frame',465:'Change_hercules_ranking',466:'Enable_accel_zone',467:'Disable_accel_zone',468:'Slider_ctrl_on',469:'Slider_ctrl_off',470:'Init_battle_script',471:'Init_all_enemy_battle_scripts',472:'Get_attack_type_received',473:'Get_map_object_damage',474:'Get_battle_count',475:'Set_message_numerical_work',476:'Enable_event_skipping',477:'Disable_event_skipping',478:'Release_object_CALLNUM',479:'Set_growth_type_1',480:'Set_growth_type_2',481:'Change_sora_parameters',482:'Set_magic_minus_flag',483:'Set_item_minus_flag',484:'Set_special_minus_flag',485:'Change_weapon',486:'Force_event_pose',487:'Force_no_event_pose',488:'Open_gummy_menu',489:'Start_movie',490:'Wait_movie_end',491:'Write_other_world_set_number',492:'Clear_history',493:'Set_save_point_flag',494:'Get_save_point_flag',495:'Delete_save_point',496:'Start_map_change',497:'Wait_name_input',498:'Add_party_menu_command',499:'Set_polygon_attribute',500:'Set_polygon_kind',501:'Set_polygon_ground',502:'Get_time_since_start',503:'Learn_magic',504:'Change_song_bank',505:'Wait_music_jump',506:'Change_track_volume',507:'Sky2_display_on',508:'Sky2_display_off',509:'Change_FOG',510:'Set_FOG_default',511:'Enter_event_mode',512:'Exit_event_mode',513:'Event_camera_on',514:'Event_camera_off',515:'MOVE_NOTURN',516:'ROT',517:'Check_map_changeable',518:'Add_char_to_dictionary',519:'Check_char_in_dictionary',520:'Add_dalmatian',521:'Check_dalmatian',522:'Update_minigame_record',523:'Get_minigame_record',524:'Set_story_flag',525:'Get_story_flag',526:'Add_anthem_report',527:'Check_anthem_report',528:'Open_party_menu',529:'Remove_char_from_dictionary',530:'Remove_story_flag',531:'Update_minigame_record_100kills',532:'Change_camera_sora_distance',533:'Get_camera_sora_distance',534:'Set_battle_message_return',535:'Play_OBJ_effect',536:'Change_OBJ_effect_scale',537:'Change_OBJ_effect_coords',538:'Erase_OBJ_effect',539:'Underwater_camera_on',540:'Underwater_camera_off',541:'Get_char_action',542:'Fade_out_MAP_group',543:'Fade_in_MAP_group',544:'Load_world_map_char',545:'Wait_world_map_char_load',546:'Open_world_map_window',547:'Close_world_map_window',548:'Set_world_map_char',549:'Set_world_map_char_motion',550:'Set_world_map_char_texture_animation',551:'Display_world_map_message',554:'Scatter_map_gimmick_prizes',555:'Check_coconuts_erasable',556:'Feel_icon_on',557:'Feel_icon_off',559:'Acquire_ability',560:'Set_gummy_name_message',561:'Set_ability_name_message',562:'Set_magic_name_message',563:'Set_summon_name_message',564:'Enable_limit_technique',565:'Disable_limit_technique',566:'Load_BGM_motion_bank2',567:'Load_wave_motion_bank2',568:'Learn_summon',569:'Summon_end_command',570:'Add_gummy',571:'Restore_HP_MP',572:'Wait_limit_skill_end',573:'Wait_summon_end',575:'Wait_SE_finish',576:'Wait_battle_icon_display',577:'Wait_restore_SE',578:'Transfer_object_SE',579:'Wait_object_SE_transfer',580:'Clear_object_SE',581:'Play_effect_bound_bone',582:'Check_save_menu_opened',583:'Get_item_from_gift_table',584:'Movie_standby',585:'Wait_movie_standby',586:'Set_game_clear_flag',587:'Get_game_clear_flag',588:'Display_gauge_fadein',589:'Remove_gauge_fadeout',590:'Display_command_fadein',591:'Remove_command_fadeout',592:'Remove_invincibility',593:'Make_party_invincible',594:'Set_world_map_flag',595:'Get_world_map_flag',596:'Read_set_number',597:'Start_map_effect',598:'Change_map_effect_pos',599:'Change_map_effect_rot',600:'Change_map_effect_scale',601:'Clear_map_effect',602:'Change_map_effect_start_frame',603:'End_map_effect_loop',604:'Bind_map_effect_to_bone',605:'Display_message_from_gift_table',606:'Change_char_color_from_map_table',607:'Load_all_enemy_SE',608:'Play_object_effect_once',609:'Start_weapon_effect',610:'Clear_weapon_effect',611:'Change_permanent_effect_color',612:'Start_map_change_rewrite_set',613:'Get_char_level',614:'Get_BG_color_R',615:'Get_BG_color_G',616:'Get_BG_color_B',617:'Set_object_BG_color',618:'Extract_set_BG_color',619:'Bind_effect_to_null',620:'Erase_weak_enemies',621:'Enable_blur_no_update',622:'Check_object_touching_zone',623:'Widescreen_on_frame',624:'Widescreen_off_frame',625:'Set_special_command_range',626:'Change_appear_flag',628:'Gummy_shop_buy',629:'Gummy_shop_sell',633:'Set_hercules_victory_flag',634:'Get_hercules_victory_flag',635:'Set_magic_name_message_multi',636:'Change_char_action',637:'Play_effect_bound_bone2',638:'Get_dalmatians_collected',639:'Show_feel_icon',640:'Hide_feel_icon',641:'Speed_fix_MOVE_NOTURN',642:'Load_BGM_on_map_change',643:'No_BGM_load_on_map_change',644:'Get_item_type',645:'Get_owned_money',646:'Wait_hercules_ranking_close',647:'Play_battle_voice',648:'Enable_gummies_in_item_menu',649:'Get_counter_value',650:'Get_timer_value',651:'Restore_music_fadein',652:'Play_music_fadein',654:'Apply_effect_to_bone_pos',655:'Rotate_effect_to_bone_angle',656:'WorldMap_test',657:'Load_weapon',658:'Wait_weapon_load',659:'Fade_out_SE',660:'Show_minigame_info',661:'Hide_minigame_info',662:'End_DH_stage_destruction',673:'Synthesis_shop_menu_open',678:'Minigame_limit_on',679:'Minigame_limit_off',680:'Cancel_ignore_sound',681:'Set_jiminy_memo_flag',682:'Get_jiminy_memo_flag',683:'Equip_weapon',684:'Equip_accessory',685:'Equip_ability',689:'Get_enemies_killed2',690:'Get_enemies_killed_all',692:'Get_hercules_team',693:'Get_hercules_ranking',695:'Scale_window_from_gift',696:'Push_actor_HP',697:'Push_actor_MP',698:'Play_effect_bound_bone3',699:'Play_effect_bound_bone4',700:'Enable_flight',701:'Disable_flight',702:'Enable_polygon_touch_event',703:'Disable_polygon_touch_event',704:'Get_MAPOBJ_BG_color_frames',705:'Extract_set_BG_color_frames',706:'Apply_effect_to_bone_pos2',707:'Rotate_effect_to_bone_angle2',708:'Wait_button_press',709:'Gummi_ship_event_message',710:'Stop_all_enemy_scripts',711:'Run_all_enemy_scripts',712:'Gummi_ship_tutorial',713:'Get_sora_gameover_motion',714:'Load_system_music',715:'Wait_system_music_load',716:'Load_nightmare_effects',717:'Wait_nightmare_effects_load',718:'Get_equipped_weapon',719:'Disable_battle_field_music_switch',720:'Enable_battle_field_music_switch',721:'BeEvSetStickVal',722:'Check_weapon_displayed',723:'Slow_wait',724:'Load_system_music2',725:'Restore_BGM2',726:'Restore_music_fadein2',727:'Set_shadow_steal_flag',728:'Get_synthesiser_progress',729:'Set_BG_color_to_drawing',730:'Stop_SE_3D',731:'Color_change_no_invalidate_floor',732:'Disable_ability',733:'Unlock_ability_disable',734:'Load_map_team_effect',735:'Fill_gummy_parts',736:'BeEvCheckWait',737:'Get_pad_buttons2',738:'Show_party_weapons',739:'Hide_party_weapons',740:'Change_raft_name_highwind',741:'Message_full_gummy_set',742:'Get_player_continues_entering_map',743:'Set_minigame_played_flag',744:'Check_shared_ability_taken',745:'WmEvCheckObjMotion',746:'Get_treasure_chest_full_flag',747:'Check_bag_item_count_only',748:'Enemy_bg_impact_on',749:'Enemy_bg_impact_off',750:'WmEvStartWinTexAnime2',751:'Show_battle_counter_ending',752:'Check_bag_item_count2',753:'Get_window_X',754:'Get_window_Y',755:'Check_expert_mode',756:'White_in_3D',757:'White_out_3D',758:'Check_easy_mode',759:'Set_event_skip_flag',760:'Get_event_skip_flag',761:'Open_event_skip_menu',762:'Get_event_skip_menu_selection',763:'Get_jiminy_memo_complete'};
+const SYSCALL_BY_NAME=Object.fromEntries(Object.entries(SYSCALLS).map(([k,v])=>[v.toLowerCase(),+k]));
+const OPCODE_BY_NAME=Object.fromEntries(Object.entries(OPCODES).map(([k,v])=>[v.toLowerCase(),+k]));
+
+// ═══════════════════════ STATE ════════════════════════════
+let fileData=null,workData=null,fileName='',fileType='';
+let kgrs=[],kgrTexts=[],kgrMod=[],hlTexts=[],activeKgr=null;
+let findMatches=[],findIdx=0;
+
+// ═══════════════════════ BINARY HELPERS ══════════════════
+function u32(a,o){return((a[o]|(a[o+1]<<8)|(a[o+2]<<16)|(a[o+3]<<24))>>>0);}
+function sign24(v){return v<0x800000?v:v-0x1000000;}
+function encI(oc,op){const o=(op&0xFFFFFF)>>>0;return[o&0xFF,(o>>8)&0xFF,(o>>16)&0xFF,oc&0xFF];}
+
+// ═══════════════════════ KGR PARSER ══════════════════════
+function trimStream(data,start,max){
+  const raw=data.slice(start,max!=null?start+max:undefined);
+  const n=Math.floor(raw.length/4);
+  let fi=null;
+  for(let i=0;i<n;i++){if(!VALID_OPS.has(raw[i*4+3])){fi=i;break;}}
+  if(fi!==null){
+    let e=fi;
+    while(e>0&&!raw[(e-1)*4]&&!raw[(e-1)*4+1]&&!raw[(e-1)*4+2]&&!raw[(e-1)*4+3])e--;
+    return raw.slice(0,e*4);
+  }
+  let last=0;
+  for(let i=0;i<n;i++)if(raw[i*4]||raw[i*4+1]||raw[i*4+2]||raw[i*4+3])last=i;
+  return raw.slice(0,(last+1)*4);
+}
+function findKgrs(data){
+  const pos=[];
+  for(let i=0;i<data.length-4;i++){
+    if(data[i]===0x4B&&data[i+1]===0x47&&data[i+2]===0x52&&data[i+3]===0)pos.push(i);
+  }
+  const res=[];
+  for(let i=0;i<pos.length;i++){
+    const p=pos[i],np=i+1<pos.length?pos[i+1]:data.length;
+    const mb=np-(p+13);
+    try{
+      const s=trimStream(data,p+13,mb);
+      if(!s.length)continue;
+      const n=Math.min(Math.floor(s.length/4),200);
+      let v=0;for(let j=0;j<n;j++)if(VALID_OPS.has(s[j*4+3]))v++;
+      if(v<n*0.8)continue;
+      res.push({kgr_offset:p,unk0:u32(data,p+4),unk1:u32(data,p+8),nn_scripts:data[p+12],stream_abs:p+13,stream:s,origStream:s.slice()});
+    }catch(e){}
+  }
+  return res;
+}
+function parseEvdl(data){
+  const k=findKgrs(data);
+  if(!k.length)throw new Error('No valid KGR sections found');
+  return k;
+}
+function parseArd(data){
+  const ns=u32(data,0);
+  if(ns!==32)throw new Error('Expected 32 sections, got '+ns);
+  const offs=[];
+  for(let i=0;i<ns;i++)offs.push(u32(data,8+i*4));
+  const res=[];
+  for(let si=0;si<ns;si++){
+    const ss=offs[si];
+    if(!ss||ss>=data.length-4)continue;
+    const nn=u32(data,ss);
+    if(nn<4||nn>10)continue;
+    const evRel=u32(data,ss+4+3*4),evBase=ss+evRel;
+    if(evBase+16>=data.length)continue;
+    try{
+      const n0=u32(data,evBase),n1=u32(data,evBase+4),n2=u32(data,evBase+8);
+      if(!n2||n2>100)continue;
+      const kt=evBase+16+(n0+n1)*4;
+      let se=data.length;
+      for(let j=si+1;j<ns;j++){if(offs[j]>ss){se=offs[j];break;}}
+      for(let i=0;i<n2;i++){
+        const kr=u32(data,kt+i*4),ka=evBase+kr;
+        if(data[ka]!==0x4B||data[ka+1]!==0x47||data[ka+2]!==0x52||data[ka+3]!==0)continue;
+        let mb;
+        if(i+1<n2){const nr=u32(data,kt+(i+1)*4);mb=(evBase+nr)-(ka+13);}
+        else{mb=se-(ka+13);}
+        if(mb<=0)continue;
+        try{
+          const s=trimStream(data,ka+13,mb);
+          if(!s.length)continue;
+          const n=Math.min(Math.floor(s.length/4),200);
+          let v=0;for(let j=0;j<n;j++)if(VALID_OPS.has(s[j*4+3]))v++;
+          if(v<n*0.8)continue;
+          res.push({kgr_offset:ka,ard_section:si,unk0:u32(data,ka+4),unk1:u32(data,ka+8),nn_scripts:data[ka+12],stream_abs:ka+13,stream:s,origStream:s.slice()});
+        }catch(e){}
+      }
+    }catch(e){}
+  }
+  if(!res.length)throw new Error('No valid KGR sections found in ARD');
+  return res;
+}
+
+// ═══════════════════════ DECOMPILER ══════════════════════
+function memOp(iv){
+  const h=iv.toString(16).toUpperCase();
+  if(iv<0x800)return{d:`[0x${h}]`,c:`save_data[0x${h}]`};
+  if(iv<0x900)return{d:`[0x${h}]`,c:`save_data[0x${h}]`};
+  if(iv<0xB00)return{d:`[0x${h}]`,c:`runtime?[0x${h}]`};
+  if(iv<0xC80){const p=(iv-0x200).toString(16).toUpperCase();return{d:`[0x${h}]`,c:`save_data[0x${p}]  (alias, unsigned)`};}
+  if(iv<0xD40)return{d:`[0x${h}]`,c:`runtime?[0x${h}]`};
+  const p=(iv-0xD40).toString(16).toUpperCase();return{d:`[0x${h}]`,c:`save_data2[0x${p}]`};
+}
+function isSH(pc,oc,iv,prev){
+  if(oc!==0||iv<1||iv>256)return false;
+  return pc===0||[5,2,3,23].includes(prev);
+}
+function fmtStream(stream,abs,label){
+  const L=[];
+  const SEP='; '+'─'.repeat(72);
+  L.push(SEP,`; KGR  ${label}`,`; Stream @ 0x${abs.toString(16).toUpperCase()}  (${Math.floor(stream.length/4)} instructions)`,SEP,'');
+  const n=Math.floor(stream.length/4);
+  // blob pre-pass
+  const skipPcs={},skipSet=new Set();
+  let p2=0;
+  while(p2<n){
+    const oc=stream[p2*4+3];
+    if(!VALID_OPS.has(oc)){
+      const bs=p2;const bb=[];
+      while(p2<n&&!VALID_OPS.has(stream[p2*4+3])){bb.push(...stream.slice(p2*4,p2*4+4));skipSet.add(p2);p2++;}
+      while(bb.length&&bb[bb.length-1]===0)bb.pop();
+      let lbl;try{lbl=`db  '${String.fromCharCode(...bb)}'`;}catch(e){lbl=`db  ${bb.map(b=>b.toString(16).padStart(2,'0')).join('')}`;}
+      skipPcs[bs]=lbl;
+    }else p2++;
+  }
+  // Pre-build script index map for init_call/await_call annotations
+  // subScript[N] = {scriptNum, charId} for the Nth script in this stream
+  const subScriptMap = {};
+  let shCount = -1, prevOc2 = null;
+  for(let i=0;i<n;i++){
+    const iv2=(stream[i*4]|(stream[i*4+1]<<8)|(stream[i*4+2]<<16))>>>0;
+    const oc2=stream[i*4+3];
+    if(isSH(i,oc2,iv2,prevOc2)){ shCount++; subScriptMap[shCount]={scriptNum:shCount,charId:null,pc:i}; }
+    // Detect Set_char_ID (syscall 10) and label with the pushed entity id
+    if(oc2===24&&iv2===10&&i>0&&shCount>=0&&!subScriptMap[shCount].charId){
+      const piv=(stream[(i-1)*4]|(stream[(i-1)*4+1]<<8)|(stream[(i-1)*4+2]<<16))>>>0;
+      const poc=stream[(i-1)*4+3];
+      if(poc===9) subScriptMap[shCount].charId=`0x${piv.toString(16).toUpperCase()}`;
+    }
+    prevOc2=oc2;
+  }
+
+  let prevOc=null,si=-1;
+  for(let pc=0;pc<n;pc++){
+    const b=stream.slice(pc*4,pc*4+4);
+    const iv=b[0]|(b[1]<<8)|(b[2]<<16),oc=b[3];
+    const hx=Array.from(b).map(x=>x.toString(16).toUpperCase().padStart(2,'0')).join('');
+    if(pc in skipPcs){L.push(`  [${String(pc).padStart(5)}]  ${''.padEnd(8)}  ; ${skipPcs[pc]}`);prevOc=null;continue;}
+    if(skipSet.has(pc))continue;
+    if(isSH(pc,oc,iv,prevOc)){
+      si++;
+      L.push('',`; ${'─'.repeat(72)}`,`; Script ${si}  |  ${iv} subscript(s)  |  PC ${pc}  |  file 0x${(abs+pc*4).toString(16).toUpperCase()}`,`; ${'─'.repeat(72)}`,'');
+      prevOc=oc;continue;
+    }
+    const opname=OPCODES[oc]||`OP_${oc.toString(16).toUpperCase().padStart(2,'0')}`;
+    let ostr='',cmt='';
+    if(oc===1){ostr=ALU_OPS[iv]||`sub_${iv}`;}
+    else if(oc===2||oc===3){const s=sign24(iv),t=pc+s;ostr=`${s>=0?'+':''}${s}`;cmt=`→ PC ${t}`;}
+    else if(oc===24){const nm=SYSCALLS[iv]||'';ostr=String(iv);cmt=nm;}
+    else if([12,13,14,15,16,17,30,31].includes(oc)){const r=memOp(iv);ostr=r.d;cmt=r.c;}
+    else if(oc===10||oc===11){ostr=`[${iv}]`;}
+    else if(oc===9){ostr=`0x${iv.toString(16).toUpperCase()}`;if(iv>9)cmt=String(iv);}
+    else if(oc===22||oc===23){
+      ostr=`0x${iv.toString(16).toUpperCase()}`;
+      const tgt=subScriptMap[iv];
+      if(tgt){cmt=`→ Script ${tgt.scriptNum}${tgt.charId?' ('+tgt.charId+')':''}  PC ${tgt.pc}`;}
+      else{cmt=`→ Script ${iv} (outside KGR)`;}
+    }
+    else{ostr=iv?`0x${iv.toString(16).toUpperCase()}`:'';} 
+    const cs=cmt?`  ; ${cmt}`:'';
+    L.push(`  [${String(pc).padStart(5)}]  ${hx}  ${opname.padEnd(14)}  ${ostr.padEnd(16)}${cs}`);
+    prevOc=oc;
+  }
+  L.push('');
+  return L.join('\n');
+}
+function decompKgr(k,idx,total,src){
+  const label=`${src}  KGR@0x${k.kgr_offset.toString(16).toUpperCase()}  NN=${k.nn_scripts}`;
+  let t='';
+  if(total>1){t+=`\n\n${'#'.repeat(76)}\n# KGR[${idx}]`;if(k.ard_section!=null)t+=`  section=${k.ard_section}`;t+=`  KGR@0x${k.kgr_offset.toString(16).toUpperCase()}  stream@0x${k.stream_abs.toString(16).toUpperCase()}\n${'#'.repeat(76)}\n`;}
+  t+=fmtStream(k.stream,k.stream_abs,label);
+  return t;
+}
+
+// ═══════════════════════ ASSEMBLER ═══════════════════════
+const PH_RE=/^[?Xx]{8}$/;
+const INSTR_RE=/^\s*\[\s*(\d+|new|-|\*)\s*\]\s+([0-9A-Fa-f?]{8})\s*(.*)/;
+const LABEL_RE=/^\s*@(\w+)\s*:\s*$/;
+const DB_RE=/^\s*\[\s*(\d+|new|-|\*)\s*\]\s+;\s+db\s+(.+)$/;
+const BAN_RE=/^(#{10,}|;\s*-{10,}|;\s*KGR\b|;\s*Script\b)/;
+const SH_RE=/;\s*Script\s+\d+\s*\|\s*(\d+)\s*subscript/;
+
+function pi(s){
+  s=s.trim().replace(/[,;]$/,'');
+  if(s.startsWith('0x')||s.startsWith('0X'))return parseInt(s,16);
+  const n=parseInt(s,10);if(!isNaN(n))return n;
+  return parseInt(s,16);
+}
+function encFrMnem(mn,rest,pc,lm){
+  const m=mn.toLowerCase().trim();
+  rest=rest.trim().replace(/\s*;.*$/,'');
+  const a0=(rest.split(/\s+/)[0])||'';
+  if(m==='nop'){let op=0;try{op=pi(a0);}catch(e){}return encI(OPCODE_BY_NAME[m]??0,op);}
+  if(m==='yield'){let op=0;try{op=pi(a0);}catch(e){}return encI(5,op);}
+  if(m==='push')return encI(9,pi(a0));
+  if(m==='syscall'){let sid;try{sid=pi(a0);}catch(e){sid=SYSCALL_BY_NAME[a0.toLowerCase()];}if(sid==null)throw new Error('Unknown syscall: '+a0);return encI(24,sid);}
+  if(m==='alu'){const sub=a0.toLowerCase();if(sub in ALU_BY_NAME)return encI(1,ALU_BY_NAME[sub]);const sm=sub.match(/^sub_(\d+)$/);if(sm)return encI(1,parseInt(sm[1]));return encI(1,pi(sub));}
+  if(m==='jmp'||m==='beqz'){
+    const oc=m==='jmp'?2:3;
+    if(a0.startsWith('@')){const ln=a0.slice(1);const tp=lm[ln];if(tp==null)return null;return encI(oc,(tp-pc)&0xFFFFFF);}
+    return encI(oc,pi(a0.replace(/^\+/,''))&0xFFFFFF);
+  }
+  const oc=OPCODE_BY_NAME[m];if(oc==null)throw new Error('Unknown mnemonic: '+m);
+  let operand=0;if(rest)try{operand=pi(a0.replace(/^\[/,'').replace(/\]$/,''));}catch(e){}
+  return encI(oc,operand);
+}
+function parseAsmSec(text){
+  const lines=[];
+  for(const raw of text.split('\n')){
+    const s=raw.trim();
+    const shm=s.match(SH_RE);if(shm){lines.push({kind:'hdr',nn:parseInt(shm[1])});continue;}
+    if(!s||BAN_RE.test(s)||s.startsWith('#'))continue;
+    if(s.startsWith(';')&&!s.startsWith('; db'))continue;
+    const lm=LABEL_RE.exec(s);if(lm){lines.push({kind:'lbl',name:lm[1]});continue;}
+    const dbm=DB_RE.exec(raw);if(dbm){lines.push({kind:'db',spec:dbm[2].trim()});continue;}
+    const im=INSTR_RE.exec(raw);
+    if(im){
+      const r=im[3].trim(),parts=r.split(/\s+/,2);
+      const mn=parts[0]||'',op=r.slice(mn.length).trim().replace(/\s*;.*$/,'').trim();
+      lines.push({kind:'ins',hex:im[2],mn,op});
+    }
+  }
+  return lines;
+}
+function asmSec(lines,name=''){
+  const out=[],fixups=[],lpc={},errs=[];
+  let cur=0;
+  for(const a of lines){
+    if(a.kind==='lbl'){lpc[a.name]=cur;continue;}
+    if(a.kind==='hdr'){out.push(...encI(0,a.nn));cur++;continue;}
+    if(a.kind==='db'){
+      const spec=a.spec.trim();
+      if(/^[0-9A-Fa-f]+$/.test(spec)&&spec.length%2===0){for(let i=0;i<spec.length;i+=2)out.push(parseInt(spec.slice(i,i+2),16));}
+      else{const q=spec.replace(/^'|'$/g,'');for(let i=0;i<q.length;i++)out.push(q.charCodeAt(i)&0xFF);}
+      continue;
+    }
+    if(a.kind==='ins'){
+      let enc;
+      if(!PH_RE.test(a.hex)){enc=[];for(let i=0;i<8;i+=2)enc.push(parseInt(a.hex.slice(i,i+2),16));}
+      else{
+        const m=a.mn.toLowerCase(),ops=a.op.trim();
+        const ib=m==='jmp'||m==='beqz',ilr=ops.startsWith('@');
+        if(ib&&ilr){
+          const ln=ops.slice(1).split(/\s+/)[0],oc=m==='jmp'?2:3;
+          if(ln in lpc){enc=encI(oc,(lpc[ln]-cur)&0xFFFFFF);}
+          else{enc=encI(oc,0);fixups.push({bo:out.length,oc,ln,ip:cur});}
+        }else{
+          try{const r=encFrMnem(a.mn,a.op,cur,lpc);if(r===null){const ln=ops.slice(1).split(/\s+/)[0],oc=m==='jmp'?2:3;enc=encI(oc,0);fixups.push({bo:out.length,oc,ln,ip:cur});}else enc=r;}
+          catch(e){errs.push(`PC ${cur} (${a.mn} ${a.op}): ${e.message}`);enc=[0,0,0,0];}
+        }
+      }
+      out.push(...enc);cur++;
+    }
+  }
+  for(const f of fixups){
+    const tp=lpc[f.ln];
+    if(tp==null){errs.push(`Undefined label: @${f.ln}`);continue;}
+    const patch=encI(f.oc,(tp-f.ip)&0xFFFFFF);
+    for(let i=0;i<4;i++)out[f.bo+i]=patch[i];
+  }
+  return{stream:new Uint8Array(out),errors:errs};
+}
+
+// ═══════════════════════ REPACKER ════════════════════════
+// Count script headers in a stream to update NN field
+function countScripts(stream) {
+  const n = Math.floor(stream.length/4);
+  let count = 0, prevOc = null;
+  for (let i = 0; i < n; i++) {
+    const iv = (stream[i*4]|(stream[i*4+1]<<8)|(stream[i*4+2]<<16))>>>0;
+    const oc = stream[i*4+3];
+    if (isSH(i,oc,iv,prevOc)) count++;
+    prevOc = oc;
+  }
+  return count;
+}
+
+function repackEvdl(origData,kgrsInfo,newStreams){
+  const fk=kgrsInfo[0].kgr_offset;
+  const prefix=new Uint8Array(origData.slice(0,fk));
+  // For each KGR, use original stream bytes if unchanged, else use new stream
+  // Also preserve original NN unless stream actually changed
+  const blocks=kgrsInfo.map((k,i)=>{
+    const ns=newStreams[i];
+    const orig=k.origStream;
+    const changed=ns.length!==orig.length||ns.some((b,j)=>b!==orig[j]);
+    const h=new Uint8Array(origData.slice(k.kgr_offset,k.kgr_offset+13));
+    // Determine the original full stream bytes (between this KGR+13 and next KGR)
+    const nextKgrOff = i+1<kgrsInfo.length ? kgrsInfo[i+1].kgr_offset : origData.length;
+    const origFullStream=new Uint8Array(origData.slice(k.kgr_offset+13,nextKgrOff));
+    if(!changed){
+      // Preserve everything: original header bytes (including NN) + original full stream
+      const c=new Uint8Array(13+origFullStream.length);
+      c.set(h,0);c.set(origFullStream,13);return c;
+    } else {
+      // Stream was edited: update NN and use new stream
+      h[12]=countScripts(ns);
+      const c=new Uint8Array(13+ns.length);
+      c.set(h,0);c.set(ns,13);return c;
+    }
+  });
+  const noffs=[],patched=new Uint8Array(prefix);
+  let pos=prefix.length;
+  for(const b of blocks){noffs.push(pos);pos+=b.length;}
+  for(let i=0;i<kgrsInfo.length;i++){
+    const oo=kgrsInfo[i].kgr_offset,no=noffs[i];if(oo===no)continue;
+    const ob=[oo&0xFF,(oo>>8)&0xFF,(oo>>16)&0xFF,(oo>>24)&0xFF];
+    const nb=[no&0xFF,(no>>8)&0xFF,(no>>16)&0xFF,(no>>24)&0xFF];
+    for(let j=0;j<patched.length-3;j++){if(patched[j]===ob[0]&&patched[j+1]===ob[1]&&patched[j+2]===ob[2]&&patched[j+3]===ob[3]){patched[j]=nb[0];patched[j+1]=nb[1];patched[j+2]=nb[2];patched[j+3]=nb[3];}}
+  }
+  const total=patched.length+blocks.reduce((a,b)=>a+b.length,0);
+  const out=new Uint8Array(total);out.set(patched,0);
+  let off=patched.length;for(const b of blocks){out.set(b,off);off+=b.length;}
+  return out;
+}
+// Fix internal KGR offset tables inside each ARD section after a stream delta
+function fixArdSectionKgrTables(data, insertedAt, delta){
+  if(delta===0) return;
+  const ns2=u32(data,0);
+  const secOffs=[];
+  for(let s=0;s<ns2;s++) secOffs.push(u32(data,8+s*4));
+  for(let si=0;si<ns2;si++){
+    const ss=secOffs[si];
+    if(!ss||ss>=data.length-4) continue;
+    const nn=u32(data,ss);
+    if(nn<1||nn>16) continue;
+    try{
+      const evRel=u32(data,ss+4+3*4);
+      const evBase=ss+evRel;
+      if(evBase+16>=data.length) continue;
+      const n0=u32(data,evBase);
+      const n1=u32(data,evBase+4);
+      const n2=u32(data,evBase+8);
+      if(!n2||n2>200) continue;
+      const kt=evBase+16+(n0+n1)*4;
+      if(kt+n2*4>data.length) continue;
+      for(let ki=0;ki<n2;ki++){
+        const rel=u32(data,kt+ki*4);
+        const absPos=evBase+rel;
+        if(absPos>=insertedAt){
+          const newAbs=(absPos+delta)>>>0;
+          const newRel=(newAbs-evBase)>>>0;
+          data[kt+ki*4]=newRel&0xFF;
+          data[kt+ki*4+1]=(newRel>>8)&0xFF;
+          data[kt+ki*4+2]=(newRel>>16)&0xFF;
+          data[kt+ki*4+3]=(newRel>>24)&0xFF;
+        }
+      }
+    }catch(e){}
+  }
+}
+function repackArd(origData,kgrsInfo,newStreams){
+  let data=new Uint8Array(origData);
+  for(let i=0;i<kgrsInfo.length;i++){
+    const info=kgrsInfo[i],ns=newStreams[i];
+    const origLen=info.origStream.length;
+    const delta=ns.length-origLen;
+    const newNN=countScripts(ns); // update NN to actual script count
+    if(delta===0){
+      data.set(ns,info.stream_abs);
+      data[info.kgr_offset+12]=newNN;
+      info.origStream=ns.slice(); // keep origStream in sync
+      continue;
+    }
+    const ia=info.stream_abs,nb=new Uint8Array(data.length+delta);
+    nb.set(data.slice(0,ia+origLen),0);
+    nb.set(ns,ia);
+    nb.set(data.slice(ia+origLen),ia+ns.length);
+    nb[info.kgr_offset+12]=newNN; // update NN in new buffer
+    // Update ARD top-level section offset table
+    const ns2=u32(nb,0);
+    for(let s=0;s<ns2;s++){const ov=u32(nb,8+s*4);if(ov>=ia+origLen&&ov!==0){const fv=(ov+delta)>>>0;nb[8+s*4]=fv&0xFF;nb[9+s*4]=(fv>>8)&0xFF;nb[10+s*4]=(fv>>16)&0xFF;nb[11+s*4]=(fv>>24)&0xFF;}}
+    // Update internal KGR offset tables inside each ARD section
+    fixArdSectionKgrTables(nb, ia+origLen, delta);
+    for(let j=i+1;j<kgrsInfo.length;j++){if(kgrsInfo[j].stream_abs>=ia+origLen)kgrsInfo[j].stream_abs+=delta;if(kgrsInfo[j].kgr_offset>=ia+origLen)kgrsInfo[j].kgr_offset+=delta;}
+    info.origStream=ns.slice(); // keep origStream in sync for repeated saves
+    data=nb;
+  }
+  return data;
+}
+
+// ═══════════════════════ SYNTAX ══════════════════════════
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function hlLine(line){
+  if(/^#{5,}/.test(line))return`<span class="hbn">${esc(line)}</span>`;
+  if(/^;\s*[─=]{10,}/.test(line))return`<span class="hbn">${esc(line)}</span>`;
+  if(/^;\s*Script\s+\d+/.test(line))return`<span class="hsc">${esc(line)}</span>`;
+  if(/^;\s*KGR\b/.test(line))return`<span class="hsc">${esc(line)}</span>`;
+  if(/^\s*;/.test(line))return`<span class="hcm">${esc(line)}</span>`;
+  if(/^\s*@\w+\s*:/.test(line))return`<span class="hlb">${esc(line)}</span>`;
+  const im=line.match(/^(\s*\[\s*\d+\s*\])(\s+)([0-9A-Fa-f?]{8})(\s+)(\S+)(.*)/);
+  if(!im)return esc(line);
+  const op=im[5].toLowerCase();
+  let oc='ho';
+  if(op==='syscall')oc='hsy';
+  else if(op==='alu')oc='hau';
+  else if(op==='push'||op==='push_cond')oc='hpu';
+  else if(op==='jmp'||op==='beqz')oc='hbr';
+  else if(['read_byte','write_byte','read_word','write_word','read_dword','write_dword','read_bit','write_bit'].includes(op))oc='hm';
+  else if(['yield','flow_ctrl','init_call','await_call'].includes(op))oc='hfl';
+  const rest=im[6],ci=rest.indexOf('  ;');
+  const operand=ci>=0?rest.slice(0,ci):rest,comment=ci>=0?rest.slice(ci):'';
+  let cmtH='';
+  if(comment){const sm=comment.match(/^(\s*;\s*)(\S+)(.*)/);if(sm&&oc==='hsy')cmtH=`<span class="hcm">${esc(sm[1])}</span><span class="hsy">${esc(sm[2])}</span><span class="hcm">${esc(sm[3])}</span>`;else cmtH=`<span class="hcm">${esc(comment)}</span>`;}
+  return`<span class="hp">${esc(im[1])}</span>${esc(im[2])}<span class="hb">${esc(im[3])}</span>${esc(im[4])}<span class="${oc}">${esc(im[5])}</span><span class="hop">${esc(operand)}</span>${cmtH}`;
+}
+function hl(text){return text.split('\n').map(hlLine).join('\n');}
+
+// ═══════════════════════ UI ═══════════════════════════════
+function loadFile(file){
+  fileName=file.name;
+  fileType=file.name.toLowerCase().endsWith('.ard')?'ard':'evdl';
+  document.getElementById('fileName').textContent=file.name;
+  const r=new FileReader();
+  r.onload=ev=>{
+    try{
+      fileData=ev.target.result;
+      workData=new Uint8Array(fileData.slice(0));
+      kgrs=fileType==='ard'?parseArd(workData):parseEvdl(workData);
+      kgrTexts=kgrs.map((_,i)=>decompKgr(kgrs[i],i,kgrs.length,file.name));
+      kgrMod=kgrs.map(()=>false);
+      hlTexts=kgrs.map(()=>null); // reset HL texts on new file load
+      buildList();selectKgr(0);
+      document.getElementById('dz').style.display='none';
+      const mu=document.getElementById('mainUI');mu.style.display='flex';
+      document.getElementById('exportBtn').disabled=false;
+      document.getElementById('compareBtn').disabled=false;
+      const sb=document.getElementById('saveBtn');
+      if(sb){sb.disabled=true;sb.style.borderColor='';sb.style.color='';}
+      document.getElementById('closeBtn').style.display='';
+      setStatus(`Loaded: ${file.name}  |  ${kgrs.length} KGR section(s)`,'ok');
+      // Clear any "don't ask" flags — user has loaded a file, slate is clean
+      for(const k of Object.keys(sessionStorage)){if(k.startsWith('evdlDeclined:'))sessionStorage.removeItem(k);}
+    }catch(e){
+      document.getElementById('dzerr').textContent='Error: '+e.message;
+      document.getElementById('dzerr').style.display='block';
+      setStatus('Parse error: '+e.message,'err');
+    }
+  };
+  r.onerror=()=>{
+    document.getElementById('dzerr').textContent='Could not read file';
+    document.getElementById('dzerr').style.display='block';
+  };
+  r.readAsArrayBuffer(file);
+}
+function buildList(){
+  const l=document.getElementById('kl');l.innerHTML='';
+  kgrs.forEach((k,i)=>{
+    const d=document.createElement('div');
+    d.className='ki'+(i===0?' active':'')+(kgrMod[i]?' mod':'');
+    const sec=k.ard_section!=null?` §${k.ard_section}`:'';
+    d.innerHTML=`<span>KGR[${i}]${sec}</span><span class="kbadge">${Math.floor(k.stream.length/4)}i</span>`;
+    d.onclick=()=>selectKgr(i);
+    l.appendChild(d);
+  });
+  // Fire any pending restore hook (from session state restore)
+  if(window._evdlRestoreHook){const h=window._evdlRestoreHook;window._evdlRestoreHook=null;setTimeout(h,0);}
+}
+function _selectKgrBase(idx){
+  if(activeKgr!==null)kgrTexts[activeKgr]=document.getElementById('ca').value;
+  activeKgr=idx;
+  document.querySelectorAll('.ki').forEach((e,i)=>e.classList.toggle('active',i===idx));
+  const t=kgrTexts[idx];
+  document.getElementById('ca').value=t;
+  updHL();updLN();
+  document.getElementById('ic').textContent=`${Math.floor(kgrs[idx].stream.length/4)} instrs`;
+  setStatus(`KGR[${idx}] — ${Math.floor(kgrs[idx].stream.length/4)} instructions`,'ok');
+  document.getElementById('ep').style.display='none';
+}
+function onInput(){
+  updHL();updLN();
+  if(activeKgr!==null){
+    kgrTexts[activeKgr]=document.getElementById('ca').value;
+    if(!kgrMod[activeKgr]){kgrMod[activeKgr]=true;buildList();}
+    updDiff();
+  }
+}
+function updHL(){document.getElementById('ch').innerHTML=hl(document.getElementById('ca').value)+'\n';}
+function updLN(){
+  const n=document.getElementById('ca').value.split('\n').length;
+  let h='';for(let i=1;i<=n;i++)h+=`<div>${i}</div>`;
+  document.getElementById('ln').innerHTML=h;
+}
+function syncS(){
+  const a=document.getElementById('ca'),h=document.getElementById('ch'),l=document.getElementById('ln');
+  h.scrollTop=a.scrollTop;h.scrollLeft=a.scrollLeft;l.scrollTop=a.scrollTop;
+}
+function onKey(e){
+  if(e.key==='Tab'){e.preventDefault();const ta=e.target,s=ta.selectionStart,en=ta.selectionEnd;ta.value=ta.value.slice(0,s)+'  '+ta.value.slice(en);ta.selectionStart=ta.selectionEnd=s+2;onInput();}
+  if((e.ctrlKey||e.metaKey)&&e.key==='f'){e.preventDefault();openFind();}
+  if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){e.preventDefault();assembleOnly();}
+  if((e.ctrlKey||e.metaKey)&&e.key==='s'){e.preventDefault();exportFile();}
+  setTimeout(updCursor,0);
+}
+function updCursor(){
+  const ta=document.getElementById('ca');
+  const txt=ta.value.slice(0,ta.selectionStart);
+  const ln=txt.split('\n').length,col=txt.length-txt.lastIndexOf('\n');
+  document.getElementById('cp').textContent=`Ln ${ln}, Col ${col}`;
+}
+function updDiff(){
+  const n=kgrMod.filter(Boolean).length;
+  const d=document.getElementById('dc');d.style.display=n>0?'':'none';d.textContent=`${n} KGR modified`;
+}
+function autoInvalidateHex(text){
+  // For each instruction line, check if hex bytes still match the mnemonic+operand.
+  // If not, replace with '????????' so the assembler re-encodes from mnemonic.
+  return text.split('\n').map(line=>{
+    const im=line.match(/^(\s*\[\s*(?:\d+|new|-|\*)\s*\]\s+)([0-9A-Fa-f]{8})(\s+.*)$/);
+    if(!im)return line;
+    const before=im[1],hexStr=im[2],rest=im[3];
+    // Skip if already placeholder
+    if(/^[?Xx]{8}$/.test(hexStr))return line;
+    // Parse mnemonic+operand from rest
+    const rTrimmed=rest.trim().replace(/\s*;.*$/,'');
+    const parts=rTrimmed.split(/\s+/,2);
+    const mn=parts[0]||'',op=(parts[1]||'').replace(/\s*;.*$/,'').trim();
+    if(!mn)return line;
+    // Try to encode from mnemonic and compare
+    try{
+      const encoded=encFrMnem(mn,op,0,{});
+      if(encoded===null)return line; // forward label ref, leave as-is
+      const encodedHex=encoded.map(b=>b.toString(16).toUpperCase().padStart(2,'0')).join('');
+      if(encodedHex.toUpperCase()!==hexStr.toUpperCase()){
+        // Mismatch — hex doesn't match mnemonic+operand, invalidate
+        return before+'????????'+rest;
+      }
+    }catch(e){
+      // Unknown mnemonic or parse error — invalidate so assembler tries and reports error
+      return before+'????????'+rest;
+    }
+    return line;
+  }).join('\n');
+}
+
+function assembleOnly(){
+  if(activeKgr===null)return;
+  kgrTexts[activeKgr]=document.getElementById('ca').value;
+  const processed=autoInvalidateHex(kgrTexts[activeKgr]);
+  const{stream,errors}=asmSec(parseAsmSec(processed),`KGR[${activeKgr}]`);
+  const ep=document.getElementById('ep');
+  if(errors.length){
+    ep.style.display='block';
+    ep.innerHTML=`<div class="el" style="margin-bottom:4px">✘ Assembly failed:</div>`
+      +errors.map(e=>`<div class="el">  ${esc(e)}</div>`).join('');
+    setStatus(`Assembly failed: ${errors.length} error(s)`,'err');
+    document.getElementById('saveBtn').disabled=true;
+    return;
+  }
+  ep.style.display='none';
+  const old=Math.floor(kgrs[activeKgr].origStream.length/4);
+  kgrs[activeKgr].stream=stream;
+  const ni=Math.floor(stream.length/4);
+  document.getElementById('ic').textContent=`${ni} instrs`;
+  kgrTexts[activeKgr]=decompKgr(kgrs[activeKgr],activeKgr,kgrs.length,fileName);
+  document.getElementById('ca').value=kgrTexts[activeKgr];
+  updHL();updLN();
+  kgrMod[activeKgr]=true;buildList();updDiff();
+  const d=ni-old;
+  setStatus(`✔ Assembled KGR[${activeKgr}]: ${old} → ${ni} instrs (${d>=0?'+':''}${d}) — press SAVE to download`,'ok');
+  if(document.getElementById('cgPanel').style.display!=='none') renderCallGraph();
+  // Enable save button
+  document.getElementById('saveBtn').disabled=false;
+  document.getElementById('saveBtn').style.borderColor='var(--green)';
+  document.getElementById('saveBtn').style.color='var(--green)';
+}
+
+// Keep assembleAndApply as alias for compatibility
+function assembleAndApply(){ assembleOnly(); }
+function revertKgr(){
+  if(activeKgr===null)return;
+  kgrs[activeKgr].stream=kgrs[activeKgr].origStream.slice();
+  kgrTexts[activeKgr]=decompKgr(kgrs[activeKgr],activeKgr,kgrs.length,fileName);
+  kgrMod[activeKgr]=false;
+  document.getElementById('ca').value=kgrTexts[activeKgr];
+  updHL();updLN();buildList();updDiff();
+  document.getElementById('ep').style.display='none';
+  setStatus(`Reverted KGR[${activeKgr}]`,'warn');
+}
+function exportFile(){
+  const newStreams=kgrs.map(k=>k.stream);
+  let out;
+  try{out=fileType==='evdl'?repackEvdl(new Uint8Array(fileData),kgrs,newStreams):repackArd(new Uint8Array(fileData),kgrs,newStreams);}
+  catch(e){setStatus('Export error: '+e.message,'err');return;}
+  const blob=new Blob([out],{type:'application/octet-stream'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  const base=fileName.replace(/\.(evdl|ard)$/i,'');
+  a.href=url;a.download=`${base}_patched.${fileType}`;a.click();
+  URL.revokeObjectURL(url);
+  // Update origStream so repeated saves don't re-apply deltas
+  kgrs.forEach(k=>{ k.origStream=k.stream.slice(); });
+  setStatus(`Saved: ${a.download}`,'ok');
+}
+// Find
+let findScope = 'current'; // 'current' | 'all'
+
+function toggleScope() {
+  findScope = findScope === 'current' ? 'all' : 'current';
+  const btn = document.getElementById('scopeBtn');
+  btn.textContent = findScope === 'all' ? 'ALL KGRs' : 'THIS KGR';
+  btn.style.borderColor = findScope === 'all' ? 'var(--yellow)' : '';
+  btn.style.color       = findScope === 'all' ? 'var(--yellow)' : '';
+  doFind();
+}
+
+function openFind(){document.getElementById('fb').classList.add('vis');document.getElementById('fi2').focus();doFind();}
+function closeFind(){document.getElementById('fb').classList.remove('vis');document.getElementById('ca').focus();}
+function toggleFind(){document.getElementById('fb').classList.contains('vis')?closeFind():openFind();}
+
+function doFind(){
+  const q=document.getElementById('fi2').value;
+  if(!q){document.getElementById('fc').textContent='';findMatches=[];return;}
+
+  if(findScope==='current'){
+    // Search only active KGR text
+    const text=document.getElementById('ca').value;
+    findMatches=[];let idx=0;
+    while(true){const i=text.toLowerCase().indexOf(q.toLowerCase(),idx);if(i<0)break;findMatches.push({kgrIdx:activeKgr,charOff:i});idx=i+1;}
+    findIdx=0;
+    document.getElementById('fc').textContent=`${findMatches.length} match${findMatches.length!==1?'es':''}`;
+    if(findMatches.length)scrollToMatch(0);
+  } else {
+    // Search all KGR texts (save current editor content first)
+    if(activeKgr!==null) kgrTexts[activeKgr]=document.getElementById('ca').value;
+    findMatches=[];
+    for(let ki=0;ki<kgrTexts.length;ki++){
+      const text=kgrTexts[ki];
+      let idx=0;
+      while(true){const i=text.toLowerCase().indexOf(q.toLowerCase(),idx);if(i<0)break;findMatches.push({kgrIdx:ki,charOff:i});idx=i+1;}
+    }
+    findIdx=0;
+    const kgrCount=new Set(findMatches.map(m=>m.kgrIdx)).size;
+    document.getElementById('fc').textContent=`${findMatches.length} in ${kgrCount} KGR${kgrCount!==1?'s':''}`;
+    if(findMatches.length)scrollToMatch(0);
+  }
+}
+
+function scrollToMatch(i){
+  const m=findMatches[i],q=document.getElementById('fi2').value;
+  // If match is in a different KGR, switch to it first
+  if(m.kgrIdx!==activeKgr) selectKgr(m.kgrIdx);
+  const ta=document.getElementById('ca');
+  ta.setSelectionRange(m.charOff, m.charOff+q.length);
+  // Update count label with section info
+  const secInfo=kgrs.length>1?` (KGR[${m.kgrIdx}])`:'';
+  document.getElementById('fc').textContent=`${i+1}/${findMatches.length}${secInfo}`;
+}
+
+function jumpTo(i){
+  const m=findMatches[i],q=document.getElementById('fi2').value;
+  if(m.kgrIdx!==activeKgr) selectKgr(m.kgrIdx);
+  const ta=document.getElementById('ca');
+  ta.focus();ta.setSelectionRange(m.charOff,m.charOff+q.length);
+  const secInfo=kgrs.length>1?` (KGR[${m.kgrIdx}])`:'';
+  document.getElementById('fc').textContent=`${i+1}/${findMatches.length}${secInfo}`;
+}
+
+function findNext(){if(!findMatches.length)return;findIdx=(findIdx+1)%findMatches.length;jumpTo(findIdx);}
+function findPrev(){if(!findMatches.length)return;findIdx=(findIdx-1+findMatches.length)%findMatches.length;jumpTo(findIdx);}
+function fk(e){if(e.key==='Enter'){e.shiftKey?findPrev():findNext();}if(e.key==='Escape')closeFind();}
+function setStatus(msg,type='ok'){const el=document.getElementById('st');el.textContent=msg;el.className='s'+type;}
+
+// ═══════════════════════ CFG ENGINE ══════════════════════
+
+let cfgState = { kgrIdx:null, scriptIdx:0, tx:0, ty:0, scale:1,
+                 dragging:false, dragX:0, dragY:0,
+                 blocks:[], dirty:false, hoverBlock:null };
+
+function setMode(mode) {
+  editorMode = mode;
+  const isAsm=mode==='asm', isHl=mode==='hl', isCfg=mode==='cfg';
+  document.getElementById('asmPanel').style.display  = isAsm ? '' : 'none';
+  document.getElementById('hlPanel').style.display   = isHl  ? '' : 'none';
+  document.getElementById('cfgPanel').style.display  = isCfg ? 'flex' : 'none';
+  const sb=(id,on)=>{
+    document.getElementById(id).style.borderColor=on?'var(--accent)':'var(--muted)';
+    document.getElementById(id).style.color=on?'var(--accent)':'var(--muted)';
+  };
+  sb('asmBtn',isAsm); sb('hlBtn',isHl); sb('cfgBtn',isCfg);
+  document.getElementById('asmToolbar').style.display=isAsm?'':'none';
+  document.getElementById('hlToolbar').style.display =isHl ?'':'none';
+  if(isHl && activeKgr!==null){
+    if(!hlTexts[activeKgr]) hlTexts[activeKgr]=hlDecompileKgr(activeKgr);
+    document.getElementById('hca').value=hlTexts[activeKgr];
+    updHlHL(); updHlLN();
+  }
+  if(isCfg && activeKgr!==null){
+    // Use requestAnimationFrame to ensure panel is visible and laid out before drawing
+    document.getElementById('cfgPanel').style.display='flex';
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{
+      const c=document.getElementById('cfgCanvas');
+      if(c){
+        c.width=c.offsetWidth||c.parentElement?.offsetWidth||800;
+        c.height=c.offsetHeight||c.parentElement?.offsetHeight||600;
+      }
+      cfgBuild(activeKgr);
+    }));
+  }
+}
+
+// ── Parse stream into scripts ─────────────────────────────
+function cfgParseScripts(kgrIdx) {
+  const stream = kgrs[kgrIdx].stream;
+  const n = Math.floor(stream.length/4);
+  const scripts=[];
+  let cur=null, prevOc=null;
+  for(let i=0;i<n;i++){
+    const iv=(stream[i*4]|(stream[i*4+1]<<8)|(stream[i*4+2]<<16))>>>0;
+    const oc=stream[i*4+3];
+    const siv=iv<0x800000?iv:iv-0x1000000;
+    if(isSH(i,oc,iv,prevOc)){
+      cur={subIdx:scripts.length,startPc:i,subCount:iv,instrs:[]};
+      scripts.push(cur); prevOc=oc; continue;
+    }
+    if(!cur){cur={subIdx:0,startPc:0,subCount:0,instrs:[]};scripts.push(cur);}
+    cur.instrs.push({pc:i,oc,iv,siv});
+    prevOc=oc;
+  }
+  return scripts;
+}
+
+// ── Build basic blocks ────────────────────────────────────
+function cfgBuildBasicBlocks(script) {
+  const instrs=script.instrs;
+  if(!instrs.length) return [];
+  const leaders=new Set([instrs[0].pc]);
+  for(const ins of instrs){
+    if(ins.oc===2||ins.oc===3){
+      leaders.add(ins.pc+ins.siv);
+      const nx=ins.pc+1;
+      if(instrs.find(x=>x.pc===nx)) leaders.add(nx);
+    }
+  }
+  const blocks=[];
+  let cur=null;
+  for(const ins of instrs){
+    if(leaders.has(ins.pc)){
+      if(cur) blocks.push(cur);
+      cur={id:ins.pc,startPc:ins.pc,instrs:[],succs:[],x:0,y:0,w:0,h:0};
+    }
+    if(!cur) cur={id:ins.pc,startPc:ins.pc,instrs:[],succs:[],x:0,y:0,w:0,h:0};
+    cur.instrs.push(ins);
+  }
+  if(cur) blocks.push(cur);
+  const bmap=Object.fromEntries(blocks.map(b=>[b.startPc,b]));
+  for(const b of blocks){
+    const last=b.instrs[b.instrs.length-1];
+    if(!last) continue;
+    if(last.oc===2){const t=last.pc+last.siv;if(bmap[t])b.succs.push({block:bmap[t],type:'jmp'});}
+    else if(last.oc===3){
+      const t=last.pc+last.siv,f=last.pc+1;
+      if(bmap[t]) b.succs.push({block:bmap[t],type:'taken'});
+      if(bmap[f]) b.succs.push({block:bmap[f],type:'fall'});
+    } else {
+      const nx=last.pc+1;
+      if(bmap[nx]) b.succs.push({block:bmap[nx],type:'fall'});
+    }
+  }
+  return blocks;
+}
+
+// ── Layout ────────────────────────────────────────────────
+function cfgLayout(blocks) {
+  if(!blocks.length) return;
+  const BW=300, PADX=60, PADY=48, LH=16, BP=8;
+  const rank={};
+  const q=[blocks[0]]; rank[blocks[0].id]=0;
+  let head=0;
+  while(head<q.length){
+    const b=q[head++];
+    for(const s of b.succs){
+      if(rank[s.block.id]===undefined||rank[s.block.id]<rank[b.id]+1){
+        rank[s.block.id]=rank[b.id]+1; q.push(s.block);
+      }
+    }
+  }
+  for(const b of blocks) if(rank[b.id]===undefined) rank[b.id]=0;
+  const byRank={};
+  for(const b of blocks){const r=rank[b.id];if(!byRank[r])byRank[r]=[];byRank[r].push(b);}
+  const maxRank=Math.max(...Object.keys(byRank).map(Number));
+  let y=20;
+  for(let r=0;r<=maxRank;r++){
+    const row=byRank[r]||[];
+    const totalW=row.length*BW+(row.length-1)*PADX;
+    let x=-totalW/2, maxH=0;
+    for(const b of row){
+      b.h=BP*2+b.instrs.length*LH+20; b.w=BW;
+      b.x=x; b.y=y;
+      x+=BW+PADX; maxH=Math.max(maxH,b.h);
+    }
+    y+=maxH+PADY;
+  }
+}
+
+// ── Canvas renderer ───────────────────────────────────────
+const CFG_COLORS = {
+  bg:'#0a0e16', blockBg:'#0e1520', blockBgHover:'#131d2e',
+  blockBorder:'#1c2f44', blockBorderHover:'#00d4ff',
+  blockHdr:'#080e1c', pcCol:'#3a5060', instrFont:'10px "Share Tech Mono",monospace',
+  edgeTaken:'#00cc44', edgeFall:'#cc2244', edgeJmp:'#556677',
+};
+function cfgInstrColor2(oc){
+  if(oc===9)  return '#ff9f50';
+  if(oc===24) return '#40d090';
+  if(oc===21) return '#ff9fd4';
+  if(oc===22||oc===23) return '#ffdd57';
+  if(oc===2||oc===3)   return '#ffdd57';
+  if(oc===5)  return '#7ec8e3';
+  if(oc===1)  return '#ff9fd4';
+  return '#c8d6e5';
+}
+function cfgInstrText(ins){
+  const{oc,iv,siv,pc}=ins;
+  const mn=(OPCODES[oc]||`OP_${oc.toString(16)}`).padEnd(10);
+  let op='';
+  if(oc===1)op=ALU_OPS[iv]||String(iv);
+  else if(oc===2||oc===3)op=`${siv>=0?'+':''}${siv}  →${pc+siv}`;
+  else if(oc===9)op=`0x${iv.toString(16).toUpperCase()}`;
+  else if(oc===24)op=`${iv} ${(SYSCALLS[iv]||'').slice(0,16)}`;
+  else op=iv?`0x${iv.toString(16).toUpperCase()}`:'';
+  return{mn:mn.trim(),op:op.trim()};
+}
+
+function cfgDraw() {
+  const canvas=document.getElementById('cfgCanvas');
+  if(!canvas||document.getElementById('cfgPanel').style.display==='none') return;
+  // Sync canvas buffer size to its actual displayed size
+  const dw=canvas.offsetWidth||canvas.parentElement?.offsetWidth||800;
+  const dh=canvas.offsetHeight||canvas.parentElement?.offsetHeight||600;
+  if(canvas.width!==dw||canvas.height!==dh){canvas.width=dw;canvas.height=dh;}
+  const ctx=canvas.getContext('2d');
+  const W=canvas.width, H=canvas.height;
+  const{tx,ty,scale,blocks,hoverBlock}=cfgState;
+
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle=CFG_COLORS.bg;
+  ctx.fillRect(0,0,W,H);
+
+  if(!blocks.length){
+    ctx.fillStyle='#5a8a9a'; ctx.font='12px "Share Tech Mono",monospace';
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText('No blocks — script may be empty or unrecognised',W/2,H/2);
+    ctx.restore(); return;
+  }
+
+  ctx.save();
+  ctx.translate(W/2+tx, 40+ty);
+  ctx.scale(scale,scale);
+
+  // Draw edges
+  for(const b of blocks){
+    for(const s of b.succs){
+      const t=s.block;
+      const x1=b.x+b.w/2, y1=b.y+b.h;
+      const x2=t.x+t.w/2, y2=t.y;
+      const color=s.type==='taken'?CFG_COLORS.edgeTaken:s.type==='fall'?CFG_COLORS.edgeFall:CFG_COLORS.edgeJmp;
+      ctx.beginPath();
+      ctx.moveTo(x1,y1);
+      ctx.bezierCurveTo(x1,y1+30,x2,y2-30,x2,y2);
+      ctx.strokeStyle=color; ctx.lineWidth=1.5; ctx.globalAlpha=0.85;
+      ctx.stroke(); ctx.globalAlpha=1;
+      // Arrowhead
+      const angle=Math.atan2(y2-(y2-30),x2-x2)||Math.PI/2;
+      cfgArrow(ctx,x2,y2,Math.PI/2,color);
+      // Label
+      if(s.type!=='fall'||b.succs.length>1){
+        const mx=(x1+x2)/2, my=(y1+y2)/2;
+        ctx.font='9px "Share Tech Mono",monospace';
+        ctx.fillStyle=color; ctx.textAlign='center'; ctx.textBaseline='middle';
+        ctx.fillText(s.type==='taken'?'T':s.type==='fall'?'F':'→',mx,my);
+      }
+    }
+  }
+
+  // Draw blocks
+  const LH=16, BP=8;
+  for(const b of blocks){
+    // Script header label block
+    if(b.isHeader){
+      ctx.fillStyle='rgba(0,212,255,0.08)';
+      ctx.strokeStyle='rgba(0,212,255,0.4)';
+      ctx.lineWidth=1;
+      cfgRoundRect(ctx,b.x,b.y,b.w,b.h,3);
+      ctx.fill(); ctx.stroke();
+      ctx.font='bold 10px "Share Tech Mono",monospace';
+      ctx.fillStyle='#00d4ff'; ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText(b.label,b.x+b.w/2,b.y+b.h/2);
+      continue;
+    }
+    const isHover=b===hoverBlock;
+    // Shadow
+    ctx.fillStyle='rgba(0,0,0,0.35)';
+    cfgRoundRect(ctx,b.x+3,b.y+3,b.w,b.h,4);
+    ctx.fill();
+    // Body
+    ctx.fillStyle=isHover?CFG_COLORS.blockBgHover:CFG_COLORS.blockBg;
+    cfgRoundRect(ctx,b.x,b.y,b.w,b.h,4);
+    ctx.fill();
+    // Border
+    ctx.strokeStyle=isHover?CFG_COLORS.blockBorderHover:CFG_COLORS.blockBorder;
+    ctx.lineWidth=isHover?1.5:1;
+    ctx.stroke();
+    // Header bar
+    ctx.fillStyle=CFG_COLORS.blockHdr;
+    cfgRoundRect(ctx,b.x,b.y,b.w,18,4,true);
+    ctx.fill();
+    // PC label
+    ctx.font='9px "Share Tech Mono",monospace';
+    ctx.fillStyle='#5a8a9a'; ctx.textAlign='left'; ctx.textBaseline='middle';
+    ctx.fillText(`PC ${b.startPc} — ${b.instrs.length} instr${b.instrs.length!==1?'s':''}`,b.x+6,b.y+9);
+    // Instructions
+    b.instrs.forEach((ins,i)=>{
+      const iy=b.y+BP+18+i*LH;
+      const{mn,op}=cfgInstrText(ins);
+      // PC num
+      ctx.font='10px "Share Tech Mono",monospace';
+      ctx.fillStyle='#3a5060'; ctx.textAlign='right';
+      ctx.fillText(String(ins.pc).padStart(4),b.x+38,iy+LH*0.65);
+      // Mnemonic
+      ctx.fillStyle=cfgInstrColor2(ins.oc); ctx.textAlign='left'; ctx.font='bold 10px "Share Tech Mono",monospace';
+      ctx.fillText(mn,b.x+44,iy+LH*0.65);
+      // Operand
+      if(op){ctx.fillStyle='#c8d6e5'; ctx.font='10px "Share Tech Mono",monospace'; ctx.fillText(op.slice(0,22),b.x+122,iy+LH*0.65);}
+    });
+  }
+
+  ctx.restore();
+}
+
+function cfgArrow(ctx,x,y,angle,color){
+  const len=8,w=4;
+  ctx.save();
+  ctx.translate(x,y);
+  ctx.rotate(angle);
+  ctx.beginPath();
+  ctx.moveTo(0,0);
+  ctx.lineTo(-w,-len);
+  ctx.lineTo(w,-len);
+  ctx.closePath();
+  ctx.fillStyle=color; ctx.fill();
+  ctx.restore();
+}
+
+function cfgRoundRect(ctx,x,y,w,h,r,topOnly){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.lineTo(x+w-r,y);
+  ctx.arcTo(x+w,y,x+w,y+r,r);
+  if(topOnly){ctx.lineTo(x+w,y+h);ctx.lineTo(x,y+h);ctx.lineTo(x,y+r);}
+  else{ctx.arcTo(x+w,y+h,x+w-r,y+h,r);ctx.lineTo(x+r,y+h);ctx.arcTo(x,y+h,x,y+h-r,r);ctx.lineTo(x,y+r);}
+  ctx.arcTo(x,y,x+r,y,r);
+  ctx.closePath();
+}
+
+// World→canvas coords
+function cfgWorldToCanvas(wx,wy){
+  const canvas=document.getElementById('cfgCanvas');
+  const W=canvas.width,H=canvas.height;
+  return{x:W/2+cfgState.tx+wx*cfgState.scale,y:40+cfgState.ty+wy*cfgState.scale};
+}
+function cfgCanvasToWorld(cx,cy){
+  const canvas=document.getElementById('cfgCanvas');
+  const W=canvas.width,H=canvas.height;
+  return{x:(cx-W/2-cfgState.tx)/cfgState.scale,y:(cy-40-cfgState.ty)/cfgState.scale};
+}
+function cfgHitTest(wx,wy){
+  for(const b of cfgState.blocks){
+    if(b.isHeader) continue;
+    if(wx>=b.x&&wx<=b.x+b.w&&wy>=b.y&&wy<=b.y+b.h) return b;
+  }
+  return null;
+}
+
+// ── Build & render ────────────────────────────────────────
+function cfgBuild(kgrIdx) {
+  cfgState.kgrIdx=kgrIdx;
+  const scripts=cfgParseScripts(kgrIdx);
+  const sel=document.getElementById('cfgScriptSel');
+  sel.innerHTML='';
+
+  // Add "ALL SCRIPTS" option plus individual ones
+  const allOpt=document.createElement('option');
+  allOpt.value=-1; allOpt.textContent='ALL SCRIPTS';
+  sel.appendChild(allOpt);
+
+  scripts.forEach((s,i)=>{
+    const opt=document.createElement('option');
+    opt.value=i;
+    const ci=s.instrs.find((ins,idx)=>ins.oc===24&&ins.iv===10&&idx>0);
+    const cid=ci?s.instrs[s.instrs.indexOf(ci)-1]:null;
+    const cl=cid&&cid.oc===9?` 0x${cid.iv.toString(16).toUpperCase()}`:'';
+    const empty=s.instrs.length===0?' (empty)':'';
+    opt.textContent=`Script ${s.subIdx} (PC${s.startPc})${cl}${empty}`;
+    sel.appendChild(opt);
+  });
+
+  // Default to first non-empty script for performance
+  const firstNonEmpty=scripts.findIndex(s=>s.instrs.length>0);
+  cfgState.scriptIdx=firstNonEmpty>=0?firstNonEmpty:0;
+  sel.value=cfgState.scriptIdx;
+  cfgLoadScript(scripts,cfgState.scriptIdx);
+}
+
+function cfgLoadScript(scripts,idx){
+  let blocks;
+  if(idx===-1){
+    // ALL SCRIPTS — combine into one graph, each script is its own column
+    blocks=[];
+    const COL_GAP=120;
+    let colX=0;
+    for(const s of scripts){
+      if(!s.instrs.length) continue;
+      const sb=cfgBuildBasicBlocks(s);
+      // Add a header label block for this script
+      const hdr={id:`hdr_${s.subIdx}`,startPc:s.startPc,instrs:[],succs:[],
+                 isHeader:true,label:`Script ${s.subIdx} — PC${s.startPc}`,
+                 x:0,y:0,w:220,h:24};
+      // Layout this script's blocks
+      cfgLayoutColumn(sb,colX);
+      // Find bounding box
+      let minX=Infinity,maxX=-Infinity,minY=Infinity;
+      for(const b of sb){minX=Math.min(minX,b.x);maxX=Math.max(maxX,b.x+b.w);minY=Math.min(minY,b.y);}
+      hdr.x=minX+(maxX-minX)/2-hdr.w/2;
+      hdr.y=minY-34;
+      blocks.push(hdr,...sb);
+      // Next column starts after this one
+      const maxXAll=Math.max(...sb.map(b=>b.x+b.w));
+      colX=maxXAll+COL_GAP;
+    }
+  } else {
+    const s=scripts[idx];
+    if(!s) return;
+    blocks=cfgBuildBasicBlocks(s);
+    cfgLayout(blocks);
+  }
+  cfgState.blocks=blocks;
+  cfgState.hoverBlock=null;
+  cfgState.tx=0; cfgState.ty=0; cfgState.scale=1;
+  cfgDraw();
+}
+
+function cfgLayoutColumn(blocks,offsetX){
+  if(!blocks.length) return;
+  const BW=260, PADX=50, PADY=44, LH=16, BP=8;
+  const rank={};
+  const q=[blocks[0]]; rank[blocks[0].id]=0; let head=0;
+  while(head<q.length){
+    const b=q[head++];
+    for(const s of b.succs){
+      if(rank[s.block.id]===undefined||rank[s.block.id]<rank[b.id]+1){
+        rank[s.block.id]=rank[b.id]+1; q.push(s.block);
+      }
+    }
+  }
+  for(const b of blocks) if(rank[b.id]===undefined) rank[b.id]=0;
+  const byRank={};
+  for(const b of blocks){const r=rank[b.id];if(!byRank[r])byRank[r]=[];byRank[r].push(b);}
+  const maxRank=Math.max(...Object.keys(byRank).map(Number));
+  let y=40;
+  for(let r=0;r<=maxRank;r++){
+    const row=byRank[r]||[];
+    const totalW=row.length*BW+(row.length-1)*PADX;
+    let x=offsetX-totalW/2, maxH=0;
+    for(const b of row){
+      b.h=BP*2+b.instrs.length*LH+20; b.w=BW;
+      b.x=x; b.y=y;
+      x+=BW+PADX; maxH=Math.max(maxH,b.h);
+    }
+    y+=maxH+PADY;
+  }
+}
+
+function cfgSelectScript(idx){
+  cfgState.scriptIdx=idx;
+  cfgState.tx=0;cfgState.ty=0;cfgState.scale=1;
+  const scripts=cfgParseScripts(cfgState.kgrIdx);
+  cfgLoadScript(scripts,idx);
+}
+
+function doCompare(input) {
+  if (!input.files || !input.files[0] || activeKgr === null) return;
+  const file = input.files[0];
+  const fname = file.name;
+  const ft = fname.toLowerCase().endsWith('.ard') ? 'ard' : 'evdl';
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const data = new Uint8Array(ev.target.result);
+      const otherKgrs = ft === 'ard' ? parseArd(data) : parseEvdl(data);
+      const otherKgr = otherKgrs[activeKgr];
+      if (!otherKgr) { setStatus('No matching KGR['+activeKgr+'] in compare file', 'err'); return; }
+      const aLines = kgrTexts[activeKgr].split('\n');
+      const bLines = decompKgr(otherKgr, activeKgr, otherKgrs.length, fname).split('\n');
+      const aSet = new Set(aLines.map(l=>l.trim()).filter(l=>l&&!l.startsWith(';')&&!l.startsWith('#')));
+      const bSet = new Set(bLines.map(l=>l.trim()).filter(l=>l&&!l.startsWith(';')&&!l.startsWith('#')));
+      const added   = [...aSet].filter(l=>!bSet.has(l));
+      const removed = [...bSet].filter(l=>!aSet.has(l));
+      let html = `<div style="font-family:'Share Tech Mono',monospace;font-size:10px;padding:8px;overflow:auto;max-height:100%">`;
+      html += `<div style="color:var(--accent);margin-bottom:8px;font-size:11px">COMPARE KGR[${activeKgr}] vs ${esc(fname)}</div>`;
+      html += `<div style="color:var(--green);margin-bottom:4px">+ ${added.length} lines only in current:</div>`;
+      added.slice(0,80).forEach(l=>{html+=`<div style="color:var(--green);white-space:pre">+ ${esc(l)}</div>`;});
+      if(added.length>80)html+=`<div style="color:var(--muted)">...${added.length-80} more</div>`;
+      html += `<div style="color:#ff4466;margin-top:8px;margin-bottom:4px">- ${removed.length} lines only in compare file:</div>`;
+      removed.slice(0,80).forEach(l=>{html+=`<div style="color:#ff4466;white-space:pre">- ${esc(l)}</div>`;});
+      if(removed.length>80)html+=`<div style="color:var(--muted)">...${removed.length-80} more</div>`;
+      html += `<button class="btn btn-r" style="margin-top:8px;padding:2px 8px;font-size:10px" onclick="document.getElementById('comparePanel').style.display='none'">CLOSE</button></div>`;
+      const panel = document.getElementById('comparePanel');
+      panel.innerHTML = html;
+      panel.style.display = '';
+      setStatus(`Compare: +${added.length} added  -${removed.length} removed`, 'ok');
+    } catch(e) { setStatus('Compare error: '+e.message, 'err'); }
+  };
+  reader.readAsArrayBuffer(file);
+  input.value = '';
+}
+
+function cfgResetView(){
+  cfgState.tx=0;cfgState.ty=0;cfgState.scale=1;
+  cfgDraw();
+}
+
+function cfgFlashLine(lineIdx){
+  // Create a temporary highlight overlay on the target line
+  const ta=document.getElementById('ca');
+  const ch=document.getElementById('ch');
+  if(!ch) return;
+  // Calculate line height from the highlight div
+  const lh=ta.scrollHeight/Math.max(1,ta.value.split('\n').length);
+  const topPx=lineIdx*lh-ta.scrollTop;
+  // Create flash element
+  const flash=document.createElement('div');
+  flash.style.cssText=`position:absolute;left:0;right:0;top:${topPx}px;height:${lh+1}px;`+
+    `background:rgba(0,212,255,0.25);border-left:3px solid #00d4ff;pointer-events:none;`+
+    `z-index:10;transition:opacity 0.8s ease;`;
+  const ceditor=ch.parentElement;
+  ceditor.style.position='relative';
+  ceditor.appendChild(flash);
+  // Fade out and remove
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    flash.style.opacity='0';
+    setTimeout(()=>flash.remove(),900);
+  }));
+}
+
+function insertNewScript() {
+  if (activeKgr === null) return;
+  const ta = document.getElementById('ca');
+  const text = ta.value;
+
+  // Figure out the next script number by finding the highest Script N in the text
+  let maxScript = -1;
+  const re = /;\s*Script\s+(\d+)\s*\|/g;
+  let m;
+  while ((m = re.exec(text)) !== null) maxScript = Math.max(maxScript, parseInt(m[1]));
+  const nextNum = maxScript + 1;
+
+  // Build template
+  const sep = '; ' + '─'.repeat(72);
+  const template = [
+    '',
+    sep,
+    `; Script ${nextNum}  |  11 subscript(s)  |  PC new`,
+    sep,
+    '',
+    `  ; ── paste your instructions here ──`,
+    '',
+    `  [ new]  10000005  yield           0x10`,
+    '',
+  ].join('\n');
+
+  // Append to end of editor
+  ta.value = text + template;
+  kgrTexts[activeKgr] = ta.value;
+  kgrMod[activeKgr] = true;
+  updHL(); updLN(); buildList(); updDiff();
+
+  // Scroll to the new script and flash it
+  const newLineIdx = ta.value.split('\n').length - template.split('\n').length;
+  const lh = ta.scrollHeight / Math.max(1, ta.value.split('\n').length);
+  ta.scrollTop = Math.max(0, newLineIdx * lh - 60);
+
+  // Select the nop line so user sees where to start
+  const nopIdx = ta.value.lastIndexOf('[ new]  0B000000');
+  if (nopIdx >= 0) {
+    ta.focus();
+    ta.setSelectionRange(nopIdx, nopIdx + 20);
+    cfgFlashLine(ta.value.slice(0, nopIdx).split('\n').length);
+  }
+
+  setStatus(`Added Script ${nextNum} template — paste your instructions and ASSEMBLE`, 'ok');
+}
+
+
+// ── Input handling (set up once) ──────────────────────────
+let cfgEventsSetup=false;
+function cfgSetupEvents(){
+  if(cfgEventsSetup) return;
+  cfgEventsSetup=true;
+  const getCanvas=()=>document.getElementById('cfgCanvas');
+
+  document.addEventListener('mousemove',e=>{
+    if(!cfgState.dragging) return;
+    cfgState.tx+=e.clientX-cfgState.dragX;
+    cfgState.ty+=e.clientY-cfgState.dragY;
+    cfgState.dragX=e.clientX;
+    cfgState.dragY=e.clientY;
+    cfgDraw();
+  });
+  document.addEventListener('mouseup',()=>{
+    if(!cfgState.dragging) return;
+    cfgState.dragging=false;
+    const c=getCanvas(); if(c) c.style.cursor='grab';
+  });
+  // Canvas-specific events set up when canvas is available
+  const trySetup=setInterval(()=>{
+    const c=getCanvas();
+    if(!c) return;
+    clearInterval(trySetup);
+    c.addEventListener('mousedown',e=>{
+      const rect=c.getBoundingClientRect();
+      const wp=cfgCanvasToWorld(e.clientX-rect.left,e.clientY-rect.top);
+      const hit=cfgHitTest(wp.x,wp.y);
+      if(hit){
+        // Click on block — jump to ASM
+        setMode('asm');
+        setTimeout(()=>{
+          const ta=document.getElementById('ca');
+          const lines=ta.value.split('\n');
+          for(let i=0;i<lines.length;i++){
+            const m=lines[i].match(/^\s*\[\s*(\d+)\s*\]/);
+            if(m&&parseInt(m[1])===hit.startPc){
+              let off=0;for(let j=0;j<i;j++)off+=lines[j].length+1;
+              ta.focus();
+              ta.setSelectionRange(off,off+lines[i].length);
+              // Scroll so the target line is near the top (with small offset)
+              const lh=ta.scrollHeight/Math.max(1,lines.length);
+              ta.scrollTop=Math.max(0,i*lh-40);
+              // Sync line numbers and highlight
+              syncS();
+              // Flash the highlight overlay to draw attention
+              cfgFlashLine(i);
+              setStatus(`↳ Jumped to PC ${hit.startPc} — line ${i+1}`,'ok');
+              break;
+            }
+          }
+        },50); // small delay so ASM panel is visible before scroll
+        return;
+      }
+      cfgState.dragging=true;
+      cfgState.dragX=e.clientX;
+      cfgState.dragY=e.clientY;
+      c.style.cursor='grabbing';
+    });
+    c.addEventListener('mousemove',e=>{
+      if(cfgState.dragging) return;
+      const rect=c.getBoundingClientRect();
+      const wp=cfgCanvasToWorld(e.clientX-rect.left,e.clientY-rect.top);
+      const hit=cfgHitTest(wp.x,wp.y);
+      const changed=hit!==cfgState.hoverBlock;
+      cfgState.hoverBlock=hit;
+      c.style.cursor=hit?'pointer':'grab';
+      if(changed) cfgDraw();
+    });
+    c.addEventListener('mouseleave',()=>{
+      cfgState.hoverBlock=null;
+      cfgDraw();
+    });
+    c.addEventListener('wheel',e=>{
+      e.preventDefault();
+      const rect=c.getBoundingClientRect();
+      const mx=e.clientX-rect.left,my=e.clientY-rect.top;
+      const delta=e.deltaY>0?0.88:1.12;
+      const newScale=Math.min(4,Math.max(0.15,cfgState.scale*delta));
+      // Zoom toward mouse position
+      cfgState.tx=(cfgState.tx-mx+c.width/2)*newScale/cfgState.scale+mx-c.width/2;
+      cfgState.ty=(cfgState.ty-my+40)*newScale/cfgState.scale+my-40;
+      cfgState.scale=newScale;
+      cfgDraw();
+    },{passive:false});
+    // Resize observer
+    new ResizeObserver(()=>{
+      if(editorMode!=='cfg') return;
+      const c=getCanvas(); if(!c) return;
+      c.width=c.offsetWidth||800; c.height=c.offsetHeight||600;
+      cfgDraw();
+    }).observe(c);
+  },100);
+}
+
+// Kick off event setup
+cfgSetupEvents();
+
+// ═══════════════════════ CALL GRAPH ══════════════════════
+
+// Build a subscript index map: subscript number → {pc, label, charId}
+function buildSubscriptMap(kgrIdx) {
+  const text = kgrTexts[kgrIdx] || '';
+  const lines = text.split('\n');
+  const map = []; // array of {subIdx, pc, label, charId, firstSyscall}
+  let subIdx = -1;
+  for (let i = 0; i < lines.length; i++) {
+    const l = lines[i];
+    // Script header comment: ; Script N  |  M subscript(s)  |  PC P
+    const sh = l.match(/;\s*Script\s+(\d+)\s*\|\s*(\d+)\s*subscript.*PC\s+(\d+)/);
+    if (sh) {
+      subIdx = +sh[1]; // use the actual script number, not a sequential counter
+      map.push({ subIdx, scriptNum: +sh[1], pc: +sh[3], line: i, label: `Script ${sh[1]}`, charId: null, firstSyscall: null, calls: [], awaits: [] });
+      continue;
+    }
+    if (subIdx < 0) continue;
+    const entry = map[map.length - 1];
+    // Look for Set_char_ID to label the script
+    if (!entry.charId) {
+      const sc = l.match(/syscall\s+10\b/) || l.match(/Set_char_ID/);
+      if (sc) {
+        // Find the push before it
+        for (let j = i - 1; j >= Math.max(0, i - 3); j--) {
+          const pm = lines[j].match(/push\s+0x([0-9A-Fa-f]+)/);
+          if (pm) { entry.charId = '0x' + pm[1].toUpperCase(); break; }
+        }
+      }
+    }
+    // First non-comment syscall name for labeling
+    if (!entry.firstSyscall) {
+      const sy = l.match(/;\s+([A-Z][A-Za-z_]+)\s*$/);
+      if (sy && !l.includes('Script') && !l.includes('──')) entry.firstSyscall = sy[1];
+    }
+    // Detect init_call / await_call
+    const ic = l.match(/\]\s+[0-9A-F]{8}\s+(init_call|await_call)\s+0x([0-9A-Fa-f]+)/);
+    if (ic) {
+      const target = parseInt(ic[2], 16);
+      if (ic[1] === 'init_call') entry.calls.push({ target, line: i });
+      else entry.awaits.push({ target, line: i });
+    }
+  }
+  return map;
+}
+
+function toggleCallGraph() {
+  const panel = document.getElementById('cgPanel');
+  const btn = document.getElementById('cgBtn');
+  if (panel.style.display === 'none') {
+    panel.style.display = '';
+    btn.style.borderColor = 'var(--accent)';
+    btn.style.color = 'var(--accent)';
+    renderCallGraph();
+  } else {
+    panel.style.display = 'none';
+    btn.style.borderColor = '';
+    btn.style.color = '';
+  }
+}
+
+function renderCallGraph() {
+  if (activeKgr === null) return;
+  const map = buildSubscriptMap(activeKgr);
+  const content = document.getElementById('cgContent');
+
+  if (!map.length) {
+    content.innerHTML = `<div style="color:var(--muted);font-size:10px">No scripts found<br>KGR declares ${kgrs[activeKgr].nn_scripts} scripts</div>`;
+    return;
+  }
+
+  // Warn if detected script count doesn't match KGR header
+  const declaredCount = kgrs[activeKgr].nn_scripts;
+  let headerHtml = '';
+  if (declaredCount && map.length !== declaredCount) {
+    headerHtml = `<div style="color:var(--yellow);font-size:9px;margin-bottom:8px;padding:4px 6px;border:1px solid rgba(255,221,87,0.3);background:rgba(255,221,87,0.05)">
+      ⚠ KGR declares ${declaredCount} scripts but ${map.length} detected.<br>
+      init_call targets use the declared indices (0–${declaredCount-1}).
+    </div>`;
+  }
+
+  // Build reverse lookup: target subIdx → callers
+  const calledBy = {};
+  for (const s of map) {
+    for (const c of [...s.calls, ...s.awaits]) {
+      if (!calledBy[c.target]) calledBy[c.target] = [];
+      calledBy[c.target].push({ from: s.subIdx, scriptNum: s.scriptNum, isAwait: s.awaits.includes(c) });
+    }
+  }
+
+  let html = '';
+  for (const s of map) {
+    const label = s.charId ? `${s.label} <span style="color:var(--accent2)">${s.charId}</span>`
+                 : s.firstSyscall ? `${s.label} <span style="color:var(--muted);font-size:9px">${s.firstSyscall}</span>`
+                 : s.label;
+    const hasCalls = s.calls.length + s.awaits.length > 0;
+    const isCalledBy = calledBy[s.subIdx]?.length > 0;
+
+    html += `<div class="cg-entry" style="margin-bottom:10px;border:1px solid var(--border);padding:6px 8px;cursor:pointer;transition:background 0.1s,border-color 0.1s" onclick="jumpToSubscriptGlobal(${s.subIdx},'jump')" title="Click to jump to Script ${s.scriptNum} PC ${s.pc}">`;
+    html += `<div style="color:var(--green);font-size:10px;margin-bottom:3px">▸ ${label}</div>`;
+    html += `<div style="color:var(--muted);font-size:9px">PC ${s.pc}  ·  index ${s.subIdx} in KGR</div>`;
+
+    if (isCalledBy) {
+      html += `<div style="margin-top:5px;font-size:9px;color:var(--muted);border-top:1px solid var(--border);padding-top:4px">called by:</div>`;
+      for (const cb of calledBy[s.subIdx]) {
+        const callerScript = map.find(m => m.subIdx === cb.from);
+        const callerLabel = callerScript ? `Script ${callerScript.scriptNum}` : `Script ${cb.from}`;
+        const callType = cb.isAwait ? 'await_call' : 'init_call';
+        html += `<div class="cg-link" style="font-size:9px;color:var(--yellow);padding:1px 4px 1px 8px;cursor:pointer;transition:background 0.1s" onclick="event.stopPropagation();jumpToSubscriptGlobal(${cb.from},'init_call')">← ${callerLabel} <span style="color:var(--muted)">${callType}</span></div>`;
+      }
+    }
+
+    if (hasCalls) {
+      html += `<div style="margin-top:5px;font-size:9px;color:var(--muted);border-top:1px solid var(--border);padding-top:4px">calls:</div>`;
+      for (const c of s.calls) {
+        const targetScript = map.find(m => m.subIdx === c.target);
+        const tLabel = targetScript ? `Script ${targetScript.scriptNum}` : `Script ${c.target}`;
+        const tChar = targetScript?.charId ? ` ${targetScript.charId}` : '';
+        html += `<div class="cg-link" style="font-size:9px;color:var(--accent);padding:1px 4px 1px 8px;cursor:pointer;transition:background 0.1s" onclick="event.stopPropagation();jumpToSubscriptGlobal(${c.target},'init_call')">→ ${tLabel}${tChar} <span style="color:var(--muted)">init_call</span></div>`;
+      }
+      for (const c of s.awaits) {
+        const targetScript = map.find(m => m.subIdx === c.target);
+        const tLabel = targetScript ? `Script ${targetScript.scriptNum}` : `Script ${c.target}`;
+        const tChar = targetScript?.charId ? ` ${targetScript.charId}` : '';
+        html += `<div class="cg-link" style="font-size:9px;color:var(--accent3);padding:1px 4px 1px 8px;cursor:pointer;transition:background 0.1s" onclick="event.stopPropagation();jumpToSubscriptGlobal(${c.target},'init_call')">⇒ ${tLabel}${tChar} <span style="color:var(--muted)">await_call</span></div>`;
+      }
+    }
+    html += '</div>';
+  }
+
+  content.innerHTML = headerHtml + html;
+}
+
+function jumpToSubscript(subIdx) {
+  const map = buildSubscriptMap(activeKgr);
+  const entry = map.find(m => m.subIdx === subIdx);
+  if (!entry) return;
+  const ta = document.getElementById('ca');
+  const lines = ta.value.split('\n');
+  // Find the line containing this script header
+  let charOff = 0;
+  for (let i = 0; i < Math.min(entry.line, lines.length); i++) charOff += lines[i].length + 1;
+  ta.focus();
+  ta.setSelectionRange(charOff, charOff + (lines[entry.line]?.length || 0));
+  // Scroll into view
+  const lineH = parseFloat(getComputedStyle(ta).lineHeight) || 17;
+  ta.scrollTop = Math.max(0, entry.line * lineH - ta.clientHeight / 2);
+  setStatus(`Jumped to Script ${entry.scriptNum} (subscript ${subIdx}) at PC ${entry.pc}`, 'ok');
+}
+
+// Click-to-jump: clicking on an init_call / await_call line jumps to target
+function onAsmClick(e) {
+  updCursor();
+  if (!e.ctrlKey && !e.metaKey) return; // only jump on Ctrl+click
+  const ta = document.getElementById('ca');
+  const text = ta.value;
+  const pos = ta.selectionStart;
+  const lineStart = text.lastIndexOf('\n', pos - 1) + 1;
+  const lineEnd = text.indexOf('\n', pos);
+  const line = text.slice(lineStart, lineEnd < 0 ? undefined : lineEnd);
+  const ic = line.match(/\]\s+[0-9A-F]{8}\s+(init_call|await_call)\s+0x([0-9A-Fa-f]+)/i);
+  if (ic) {
+    e.preventDefault();
+    const target = parseInt(ic[2], 16);
+    jumpToSubscriptGlobal(target, ic[1]);
+  }
+}
+
+function jumpToSubscriptGlobal(target, callType) {
+  // First try current KGR
+  const map = buildSubscriptMap(activeKgr);
+  const entry = map.find(m => m.subIdx === target);
+  if (entry) {
+    jumpToSubscript(target);
+    setStatus(`${callType} → Script ${target} in KGR[${activeKgr}] (same KGR)`, 'ok');
+    return;
+  }
+  // Not found in current KGR — search all KGRs
+  for (let ki = 0; ki < kgrs.length; ki++) {
+    if (ki === activeKgr) continue;
+    // Ensure kgrTexts[ki] is decompiled
+    if (!kgrTexts[ki]) kgrTexts[ki] = decompKgr(kgrs[ki], ki, kgrs.length, fileName);
+    const m = buildSubscriptMap(ki);
+    const e = m.find(x => x.subIdx === target);
+    if (e) {
+      selectKgr(ki);
+      setTimeout(() => {
+        jumpToSubscript(target);
+        setStatus(`${callType} → Script ${target} found in KGR[${ki}] — jumped`, 'ok');
+      }, 50);
+      return;
+    }
+  }
+  setStatus(`${callType} → Script ${target} not found in any KGR`, 'warn');
+}
+
+// Refresh call graph when KGR changes
+const _cgOrigSelectKgrBase = _selectKgrBase;
+// (call graph auto-refreshes via renderCallGraph if panel is open)
+let editorMode = 'asm'; // 'asm' | 'hl'
+
+function onHlInput() {
+  updHlHL(); updHlLN();
+  if (activeKgr !== null) hlTexts[activeKgr] = document.getElementById('hca').value;
+}
+function syncHlS() {
+  const a=document.getElementById('hca'),h=document.getElementById('hch'),l=document.getElementById('hln');
+  h.scrollTop=a.scrollTop; h.scrollLeft=a.scrollLeft; l.scrollTop=a.scrollTop;
+}function onHlKey(e) {
+  if (e.key==='Tab'){e.preventDefault();const ta=e.target,s=ta.selectionStart,en=ta.selectionEnd;ta.value=ta.value.slice(0,s)+'  '+ta.value.slice(en);ta.selectionStart=ta.selectionEnd=s+2;onHlInput();}
+  if ((e.ctrlKey||e.metaKey)&&e.key==='s'){e.preventDefault();hlCompileAndSave();}
+  if ((e.ctrlKey||e.metaKey)&&e.key==='p'){e.preventDefault();hlPreview();}
+  setTimeout(updHlCursor,0);
+}
+function updHlCursor() {
+  const ta=document.getElementById('hca');
+  const txt=ta.value.slice(0,ta.selectionStart);
+  const ln=txt.split('\n').length,col=txt.length-txt.lastIndexOf('\n');
+  document.getElementById('cp').textContent=`Ln ${ln}, Col ${col}`;
+}
+function updHlLN() {
+  const n=document.getElementById('hca').value.split('\n').length;
+  let h='';for(let i=1;i<=n;i++)h+=`<div>${i}</div>`;
+  document.getElementById('hln').innerHTML=h;
+}
+
+// ── EVDL-C Syntax Highlighter ─────────────────────────────
+const HL_KW = new Set(['script','while','if','else','for','return','true','false','asm','break','continue']);
+function escH(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function hlHlLine(line) {
+  // Comments
+  if (/^\s*\/\//.test(line)) return `<span class="hc-cm">${escH(line)}</span>`;
+  let out = '';
+  let i = 0;
+  const src = line;
+  while (i < src.length) {
+    // Line comment
+    if (src[i]==='/' && src[i+1]==='/') { out+=`<span class="hc-cm">${escH(src.slice(i))}</span>`; break; }
+    // String
+    if (src[i]==='"') {
+      let j=i+1; while(j<src.length && src[j]!=='"') j++;
+      out+=`<span class="hc-str">${escH(src.slice(i,j+1))}</span>`; i=j+1; continue;
+    }
+    // Number 0x... or decimal
+    if (/[0-9]/.test(src[i]) || (src[i]==='0'&&src[i+1]==='x')) {
+      let j=i; if(src[i]==='0'&&src[i+1]==='x'){j+=2; while(j<src.length&&/[0-9a-fA-F]/.test(src[j]))j++;}
+      else{while(j<src.length&&/[0-9]/.test(src[j]))j++;}
+      out+=`<span class="hc-num">${escH(src.slice(i,j))}</span>`; i=j; continue;
+    }
+    // Identifier — keyword or syscall name
+    if (/[a-zA-Z_]/.test(src[i])) {
+      let j=i; while(j<src.length&&/[a-zA-Z_0-9]/.test(src[j]))j++;
+      const word=src.slice(i,j);
+      if (HL_KW.has(word)) out+=`<span class="hc-kw">${escH(word)}</span>`;
+      else if (SYSCALL_BY_NAME[word.toLowerCase()]!==undefined||['yield','wait','set_char_id','push_cond','init_call','await_call','push','alu','store_local','load_local','read_byte','write_byte','read_word','write_word','read_dword','write_dword','read_bit','write_bit'].includes(word.toLowerCase())) out+=`<span class="hc-fn">${escH(word)}</span>`;
+      else out+=escH(word);
+      i=j; continue;
+    }
+    // Operators
+    if (/[+\-*\/=<>!&|^~%]/.test(src[i])) { out+=`<span class="hc-op">${escH(src[i])}</span>`; i++; continue; }
+    out+=escH(src[i]); i++;
+  }
+  return out;
+}
+function updHlHL() {
+  document.getElementById('hch').innerHTML = document.getElementById('hca').value.split('\n').map(hlHlLine).join('\n') + '\n';
+}
+
+// ── EVDL-C Compiler ───────────────────────────────────────
+function hlCompile(src) {
+  // Returns {instrs:[], errors:[]} where instrs = [{op, iv}] matching asmSec output
+  const errors = [];
+  const instrs = []; // flat list of {oc, iv} raw instructions
+
+  // Tokeniser
+  function tokenise(s) {
+    const tokens = [];
+    let i = 0;
+    while (i < s.length) {
+      if (/\s/.test(s[i])) { i++; continue; }
+      if (s[i]==='/' && s[i+1]==='/') { while(i<s.length && s[i]!=='\n') i++; continue; }
+      if (s[i]==='/' && s[i+1]==='*') { while(i<s.length-1 && !(s[i]==='*'&&s[i+1]==='/')) i++; i+=2; continue; }
+      // Number
+      if (/[0-9]/.test(s[i])) {
+        let j=i;
+        if (s[i]==='0'&&s[i+1]==='x'){j+=2;while(j<s.length&&/[0-9a-fA-F]/.test(s[j]))j++;}
+        else{while(j<s.length&&/[0-9]/.test(s[j]))j++;}
+        tokens.push({type:'num',val:parseInt(s.slice(i,j),s.slice(i,i+2)==='0x'?16:10),raw:s.slice(i,j)}); i=j; continue;
+      }
+      // Identifier
+      if (/[a-zA-Z_]/.test(s[i])) {
+        let j=i; while(j<s.length&&/[a-zA-Z_0-9]/.test(s[j]))j++;
+        tokens.push({type:'id',val:s.slice(i,j)}); i=j; continue;
+      }
+      // String
+      if (s[i]==='"') {
+        let j=i+1; while(j<s.length&&s[j]!=='"')j++;
+        tokens.push({type:'str',val:s.slice(i+1,j)}); i=j+1; continue;
+      }
+      // Punctuation
+      tokens.push({type:'punc',val:s[i]}); i++;
+    }
+    return tokens;
+  }
+
+  const tokens = tokenise(src);
+  let pos = 0;
+  const peek = () => tokens[pos] || {type:'eof'};
+  const next = () => tokens[pos++] || {type:'eof'};
+  const expect = (type, val) => {
+    const t = next();
+    if (t.type!==type || (val!==undefined && t.val!==val)) errors.push(`Expected ${val||type}, got ${t.val||t.type}`);
+    return t;
+  };
+
+  function emit(oc, iv) { instrs.push({oc, iv: (iv>>>0)}); }
+  function emitPush(v) { emit(9, v>>>0); }
+
+  // Parse expression (simple: number, hex, or identifier resolving to syscall ID)
+  function parseExpr() {
+    const t = peek();
+    if (t.type==='num') { next(); return t.val; }
+    if (t.type==='id') {
+      next();
+      const sc = SYSCALL_BY_NAME[t.val.toLowerCase()];
+      if (sc!==undefined) return sc;
+      errors.push(`Unknown identifier: ${t.val}`);
+      return 0;
+    }
+    errors.push(`Expected expression, got ${t.val||t.type}`);
+    next(); return 0;
+  }
+
+  // Parse argument list: (arg, arg, ...)
+  function parseArgs() {
+    expect('punc','(');
+    const args = [];
+    while (peek().val!==')' && peek().type!=='eof') {
+      args.push(parseExpr());
+      if (peek().val===',') next();
+    }
+    expect('punc',')');
+    return args;
+  }
+
+  // Parse a block { ... }
+  function parseBlock() {
+    expect('punc','{');
+    while (peek().val!=='}' && peek().type!=='eof') parseStmt();
+    expect('punc','}');
+  }
+
+  // Patch a branch at index [patchIdx] to point to current instruction
+  function patchBranch(patchIdx) {
+    const target = instrs.length;
+    const offset = target - patchIdx - 1;
+    instrs[patchIdx].iv = (offset>>>0);
+  }
+
+  function parseStmt() {
+    const t = peek();
+    if (t.type==='eof') return;
+
+    // Script block definition: script name() { ... }
+    if (t.type==='id' && t.val==='script') {
+      next();
+      const name = next(); // script name
+      expect('punc','('); expect('punc',')');
+      // Count subscripts by scanning ahead (we emit nop header after body)
+      // For simplicity emit nop 0 as placeholder — user can set subscript count manually
+      // Actually: emit nop with subscript count = 0 (will be set to 1 for standalone)
+      const nopIdx = instrs.length;
+      emit(0, 1); // nop 1 placeholder header
+      parseBlock();
+      return;
+    }
+
+    // while(true) { } — spin loop
+    if (t.type==='id' && t.val==='while') {
+      next(); expect('punc','(');
+      const cond = peek();
+      if (cond.type==='id' && cond.val==='true') {
+        next(); expect('punc',')');
+        const loopStart = instrs.length;
+        parseBlock();
+        emit(2, (loopStart - instrs.length - 1)>>>0); // jmp back
+      } else if (cond.type==='id' && cond.val==='cond') {
+        // while(cond(x)) { }
+        next(); expect('punc','(');
+        const condVal = parseExpr();
+        expect('punc',')'); expect('punc',')');
+        emitPush(1); // push 1 (condition is always evaluated via push_cond)
+        emit(21, condVal); // push_cond
+        const beqzIdx = instrs.length;
+        emit(3, 0); // beqz placeholder
+        const loopStart = instrs.length;
+        parseBlock();
+        emit(2, (loopStart - instrs.length - 2)>>>0); // jmp back before push
+        patchBranch(beqzIdx);
+      } else {
+        // while(0) — infinite spin using push 1 beqz jmp pattern
+        const condVal = parseExpr();
+        expect('punc',')');
+        emitPush(1);
+        const beqzIdx = instrs.length;
+        emit(3, 0);
+        const loopStart = instrs.length;
+        parseBlock();
+        emit(2, (loopStart - instrs.length - 2)>>>0);
+        patchBranch(beqzIdx);
+      }
+      return;
+    }
+
+    // if(cond(x)) { } else { }
+    if (t.type==='id' && t.val==='if') {
+      next(); expect('punc','(');
+      const cond = peek();
+      let condVal = 0;
+      if (cond.type==='id' && cond.val==='cond') {
+        next(); expect('punc','(');
+        condVal = parseExpr();
+        expect('punc',')');
+      } else {
+        condVal = parseExpr();
+      }
+      expect('punc',')');
+      emit(21, condVal); // push_cond
+      const beqzIdx = instrs.length;
+      emit(3, 0); // beqz over then-block
+      parseBlock();
+      if (peek().type==='id' && peek().val==='else') {
+        next();
+        const jmpIdx = instrs.length;
+        emit(2, 0); // jmp over else-block
+        patchBranch(beqzIdx);
+        parseBlock();
+        patchBranch(jmpIdx);
+      } else {
+        patchBranch(beqzIdx);
+      }
+      return;
+    }
+
+    // yield(n) — emit n yield instructions
+    if (t.type==='id' && t.val==='yield') {
+      next();
+      let n = 1;
+      if (peek().val==='(') { expect('punc','('); n=parseExpr(); expect('punc',')'); }
+      for (let i=0;i<Math.max(1,n);i++) emit(5, 0x10);
+      if (peek().val===';') next();
+      return;
+    }
+
+    // wait(n) — Set_wait_timer
+    if (t.type==='id' && t.val==='wait') {
+      next();
+      const args = parseArgs();
+      emitPush(args[0]||0);
+      emit(24, 8); // syscall Set_wait_timer
+      if (peek().val===';') next();
+      return;
+    }
+
+    // push(v)
+    if (t.type==='id' && t.val==='push') {
+      next(); const args=parseArgs();
+      emitPush(args[0]||0);
+      if (peek().val===';') next();
+      return;
+    }
+
+    // push_cond(v)
+    if (t.type==='id' && t.val==='push_cond') {
+      next(); const args=parseArgs();
+      emit(21, args[0]||0);
+      if (peek().val===';') next();
+      return;
+    }
+
+    // init_call(subscript, slots, cond) or init_call(subscript)
+    if (t.type==='id' && (t.val==='init_call'||t.val==='await_call')) {
+      const isAwait = t.val==='await_call';
+      next(); const args=parseArgs();
+      if (args.length>=3) { emitPush(args[1]); emit(21,args[2]); }
+      emit(isAwait?23:22, args[0]||0);
+      if (peek().val===';') next();
+      return;
+    }
+
+    // asm { raw hex lines }
+    if (t.type==='id' && t.val==='asm') {
+      next(); expect('punc','{');
+      // collect raw hex until }
+      while(peek().val!=='}' && peek().type!=='eof') {
+        const tok = next();
+        // raw hex: 8 hex chars
+        if (tok.type==='id' && /^[0-9a-fA-F]{8}$/.test(tok.val)) {
+          const bytes = tok.val.match(/../g).map(b=>parseInt(b,16));
+          const iv = (bytes[0]|(bytes[1]<<8)|(bytes[2]<<16))>>>0;
+          const oc = bytes[3];
+          emit(oc, iv);
+        }
+      }
+      expect('punc','}');
+      if (peek().val===';') next();
+      return;
+    }
+
+    // alu(op)
+    if (t.type==='id' && t.val==='alu') {
+      next(); expect('punc','(');
+      const op = next();
+      expect('punc',')');
+      const aluIdx = ALU_BY_NAME[op.val] ?? 0;
+      emit(1, aluIdx);
+      if (peek().val===';') next();
+      return;
+    }
+
+    // Any syscall by name: syscall_name(arg1, arg2, ...)
+    if (t.type==='id') {
+      const name = t.val.toLowerCase();
+      const scId = SYSCALL_BY_NAME[name];
+      if (scId !== undefined) {
+        next();
+        if (peek().val==='(') {
+          const args = parseArgs();
+          // Push args in reverse order (stack convention: last arg pushed first)
+          // Actually KH1 pushes args left to right
+          for (const a of args) emitPush(a);
+        }
+        emit(24, scId);
+        if (peek().val===';') next();
+        return;
+      }
+      // set_char_id shorthand
+      if (name==='set_char_id') {
+        next(); const args=parseArgs();
+        emitPush(args[0]||0);
+        emit(24, 10);
+        if (peek().val===';') next();
+        return;
+      }
+    }
+
+    // Unknown — skip
+    errors.push(`Unknown statement: ${t.val||t.type} at token ${pos}`);
+    next();
+  }
+
+  // Parse top level
+  while (peek().type !== 'eof') parseStmt();
+
+  return { instrs, errors };
+}
+
+// Convert compiler instrs to assembly text that the existing assembler can process
+function hlInstrsToAsm(instrs) {
+  return instrs.map((ins, i) => {
+    const oc = ins.oc & 0xFF;
+    const iv = ins.iv & 0xFFFFFF;
+    const hexBytes = [iv&0xFF,(iv>>8)&0xFF,(iv>>16)&0xFF,oc].map(b=>b.toString(16).toUpperCase().padStart(2,'0')).join('');
+    const mn = OPCODES[oc] || 'nop';
+    return `  [ new]  ${hexBytes}  ${mn.padEnd(12)}  0x${iv.toString(16).toUpperCase()}`;
+  }).join('\n');
+}
+
+function hlCompileAndSave() {
+  if (activeKgr === null) return;
+  const src = document.getElementById('hca').value;
+  const {instrs, errors} = hlCompile(src);
+  const ep = document.getElementById('ep');
+  if (errors.length) {
+    ep.style.display='block';
+    ep.innerHTML=`<div class="el" style="margin-bottom:4px">✘ Compile failed:</div>`+errors.map(e=>`<div class="el">  ${esc(e)}</div>`).join('');
+    setStatus(`Compile failed: ${errors.length} error(s)`,'err');
+    return;
+  }
+  ep.style.display='none';
+  // Convert to stream bytes
+  const stream = new Uint8Array(instrs.length * 4);
+  instrs.forEach((ins,i)=>{
+    const iv=(ins.iv>>>0)&0xFFFFFF;
+    stream[i*4]=iv&0xFF; stream[i*4+1]=(iv>>8)&0xFF; stream[i*4+2]=(iv>>16)&0xFF; stream[i*4+3]=ins.oc&0xFF;
+  });
+  const old = Math.floor(kgrs[activeKgr].origStream.length/4);
+  kgrs[activeKgr].stream = stream;
+  const ni = Math.floor(stream.length/4);
+  document.getElementById('ic').textContent=`${ni} instrs`;
+  // Regenerate ASM text
+  kgrTexts[activeKgr]=decompKgr(kgrs[activeKgr],activeKgr,kgrs.length,fileName);
+  kgrMod[activeKgr]=true; buildList(); updDiff();
+  const d=ni-old;
+  setStatus(`Compiled KGR[${activeKgr}]: ${old}→${ni} instrs (${d>=0?'+':''}${d}) — saving...`,'ok');
+  exportFile();
+}
+
+function hlPreview() {
+  if (activeKgr === null) return;
+  const src = document.getElementById('hca').value;
+  const {instrs, errors} = hlCompile(src);
+  const panel = document.getElementById('previewPanel');
+  const content = document.getElementById('previewContent');
+  if (errors.length) {
+    content.textContent = 'Errors:\n' + errors.join('\n');
+  } else {
+    content.textContent = hlInstrsToAsm(instrs);
+  }
+  panel.style.display = '';
+}
+
+// ── EVDL-C Decompiler ─────────────────────────────────────
+// Converts existing KGR bytecode back to EVDL-C high-level source
+function hlDecompileKgr(kgrIdx) {
+  const stream = kgrs[kgrIdx].stream;
+  const n = Math.floor(stream.length / 4);
+  const instrs = [];
+  for (let i=0;i<n;i++) {
+    const iv=((stream[i*4])|(stream[i*4+1]<<8)|(stream[i*4+2]<<16))>>>0;
+    const oc=stream[i*4+3];
+    const siv=iv<0x800000?iv:iv-0x1000000; // signed
+    instrs.push({oc,iv,siv,i});
+  }
+
+  const lines = [];
+  let pc = 0;
+  lines.push(`// KGR[${kgrIdx}] — auto-decompiled`);
+  lines.push(`// Edit and use COMPILE + SAVE to apply changes`);
+  lines.push('');
+
+  // Track script boundaries from nop headers
+  const scriptStarts = new Set();
+  for (let i=0;i<instrs.length;i++) {
+    if (instrs[i].oc===0 && instrs[i].iv>0 && instrs[i].iv<256) scriptStarts.add(i);
+  }
+
+  let inScript = false;
+  let indent = '';
+  let i = 0;
+
+  while (i < instrs.length) {
+    const ins = instrs[i];
+    const {oc, iv, siv} = ins;
+
+    // Script header nop
+    if (oc===0 && iv>0 && iv<256) {
+      if (inScript) { lines.push('}'); lines.push(''); }
+      lines.push(`script s${i}() {  // ${iv} subscript(s)`);
+      inScript = true; indent = '    ';
+      i++; continue;
+    }
+
+    // yield — collect consecutive yields
+    if (oc===5) {
+      let cnt=0; while(i<instrs.length && instrs[i].oc===5){cnt++;i++;}
+      lines.push(`${indent}yield(${cnt});`);
+      continue;
+    }
+
+    // push + syscall pattern — most common
+    if (oc===9) {
+      // Peek ahead for pattern
+      const pushVal = iv;
+      // Collect all consecutive pushes
+      const pushes = [pushVal]; i++;
+      while (i<instrs.length && instrs[i].oc===9){pushes.push(instrs[i].iv);i++;}
+
+      if (i<instrs.length && instrs[i].oc===24) {
+        const scId = instrs[i].iv;
+        const scName = SYSCALLS[scId] || `syscall_${scId}`;
+        const args = pushes.map(p=>{
+          if (p > 0x20000) return `0x${p.toString(16).toUpperCase()}`;
+          return p <= 255 ? p : `0x${p.toString(16).toUpperCase()}`;
+        }).join(', ');
+        lines.push(`${indent}${scName}(${args});`);
+        i++; continue;
+      }
+      // push without syscall — emit as push statements
+      for (const pv of pushes) lines.push(`${indent}push(0x${pv.toString(16).toUpperCase()});`);
+      continue;
+    }
+
+    // push_cond + init_call / await_call pattern
+    if (oc===21) {
+      const condVal = iv; i++;
+      if (i<instrs.length && (instrs[i].oc===22||instrs[i].oc===23)) {
+        const isAwait = instrs[i].oc===23;
+        const sub = instrs[i].iv;
+        lines.push(`${indent}${isAwait?'await_call':'init_call'}(0x${sub.toString(16)}, /* slots */, 0x${condVal.toString(16)});`);
+        i++; continue;
+      }
+      lines.push(`${indent}push_cond(0x${condVal.toString(16).toUpperCase()});`);
+      continue;
+    }
+
+    // push + push_cond + init_call pattern
+    // beqz / jmp — try to detect while(true) spin loop
+    if (oc===3) { // beqz
+      // Check if this is part of a spin loop: push 1; beqz +2; jmp -2
+      if (i>=1 && instrs[i-1].oc===9 && instrs[i-1].iv===1 && siv===2
+          && i+1<instrs.length && instrs[i+1].oc===2 && (instrs[i+1].siv===-2||instrs[i+1].siv===-3)) {
+        // Remove the push(1) we already emitted
+        if (lines.length && lines[lines.length-1].trim()===`push(0x1);`) lines.pop();
+        lines.push(`${indent}while (true) {`);
+        lines.push(`${indent}    // spin`);
+        lines.push(`${indent}}`);
+        i+=2; continue;
+      }
+      lines.push(`${indent}// beqz 0x${iv.toString(16)} (offset ${siv})`);
+      i++; continue;
+    }
+    if (oc===2) { // jmp
+      lines.push(`${indent}// jmp offset ${siv}`);
+      i++; continue;
+    }
+
+    // syscall alone (no push args)
+    if (oc===24) {
+      const scName = SYSCALLS[iv] || `syscall_${iv}`;
+      lines.push(`${indent}${scName}();`);
+      i++; continue;
+    }
+
+    // alu
+    if (oc===1) {
+      const opName = ALU_OPS[iv] || iv;
+      lines.push(`${indent}alu(${opName});`);
+      i++; continue;
+    }
+
+    // Memory ops — emit as asm{} escape
+    if (oc>=12 && oc<=17 || oc===30||oc===31||oc===10||oc===11) {
+      const hexBytes=[iv&0xFF,(iv>>8)&0xFF,(iv>>16)&0xFF,oc].map(b=>b.toString(16).toUpperCase().padStart(2,'0')).join('');
+      lines.push(`${indent}asm { ${hexBytes} }  // ${OPCODES[oc]||oc}`);
+      i++; continue;
+    }
+
+    // Fallback — raw asm
+    const hexBytes=[iv&0xFF,(iv>>8)&0xFF,(iv>>16)&0xFF,oc].map(b=>b.toString(16).toUpperCase().padStart(2,'0')).join('');
+    lines.push(`${indent}asm { ${hexBytes} }  // ${OPCODES[oc]||oc}`);
+    i++;
+  }
+
+  if (inScript) { lines.push('}'); }
+  return lines.join('\n');
+}
+
+function hlDecompile() {
+  if (activeKgr === null) return;
+  hlTexts[activeKgr] = hlDecompileKgr(activeKgr);
+  document.getElementById('hca').value = hlTexts[activeKgr];
+  updHlHL(); updHlLN();
+  setStatus(`Decompiled KGR[${activeKgr}] to EVDL-C`,'ok');
+}
+
+// Keep hlTexts in sync when KGR changes
+function selectKgr(i) {
+  if (editorMode==='hl' && activeKgr!==null) hlTexts[activeKgr]=document.getElementById('hca').value;
+  _selectKgrBase(i);
+  if (editorMode==='hl') {
+    if (!hlTexts[i]) hlTexts[i]=hlDecompileKgr(i);
+    document.getElementById('hca').value=hlTexts[i];
+    updHlHL(); updHlLN();
+  }
+  // Refresh call graph if open
+  if (document.getElementById('cgPanel').style.display !== 'none') renderCallGraph();
+  // Refresh CFG if active
+  if (editorMode === 'cfg') cfgBuild(i);
+}
+
+// Theme toggle
+function closeFile(){
+  kgrs=[];kgrTexts=[];kgrMod=[];activeKgr=null;
+  document.getElementById('mainUI').style.display='none';
+  document.getElementById('dz').style.display='';
+  document.getElementById('dzerr').style.display='none';
+  document.getElementById('fileName').textContent='No file loaded';
+  document.getElementById('closeBtn').style.display='none';
+  document.getElementById('exportBtn').disabled=true;
+  document.getElementById('dc').style.display='none';
+  document.getElementById('fi').value='';
+  // Clear session state so switching to ARD and back doesn't re-open this file
+  sessionStorage.removeItem('evdlState');
+  // Clear any "don't ask again" flags so a new ARD file can prompt
+  for(const k of Object.keys(sessionStorage)){if(k.startsWith('evdlDeclined:'))sessionStorage.removeItem(k);}
+  findScope='current';
+  const sb=document.getElementById('scopeBtn');
+  sb.textContent='THIS KGR';sb.style.borderColor='';sb.style.color='';
+}
+
+function toggleTheme(){
+  const light=document.body.classList.toggle('light');
+  document.getElementById('themeBtn').textContent=light?'☾ DARK':'☀ LIGHT';
+  localStorage.setItem('evdlTheme',light?'light':'dark');
+}
+if(localStorage.getItem('evdlTheme')==='light'){
+  document.body.classList.add('light');
+  document.getElementById('themeBtn').textContent='☾ DARK';
+}
+
+// File I/O
+document.getElementById('fi').onchange=e=>{if(e.target.files[0])loadFile(e.target.files[0]);};
+const dz=document.getElementById('dz');
+document.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('over');});
+document.addEventListener('dragleave',()=>dz.classList.remove('over'));
+document.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('over');const f=e.dataTransfer.files[0];if(f)loadFile(f);});
+
+// ── Session state ─────────────────────────────────────────
+function saveStateAndNav(e,url){
+  e.preventDefault();
+  if(workData&&fileName){
+    try{
+      if(activeKgr!==null) kgrTexts[activeKgr]=document.getElementById('ca').value;
+      // Store texts only (small) — binary will be sourced from ardState if same file
+      const ardRaw=sessionStorage.getItem('ardState');
+      const ardState=ardRaw?JSON.parse(ardRaw):null;
+      const sameAsArd=ardState&&ardState.fileName===fileName;
+      if(sameAsArd){
+        // Don't duplicate the binary — just save texts and a flag
+        sessionStorage.setItem('evdlState',JSON.stringify({
+          fileName,useArdData:true,texts:kgrTexts,modFlags:kgrMod,
+        }));
+      } else {
+        // Different file — must store binary
+        let bin='';for(let i=0;i<workData.length;i++)bin+=String.fromCharCode(workData[i]);
+        sessionStorage.setItem('evdlState',JSON.stringify({
+          fileName,data:btoa(bin),texts:kgrTexts,modFlags:kgrMod,
+        }));
+      }
+    }catch(err){
+      // Quota exceeded — still navigate
+    }
+  } else {
+    sessionStorage.removeItem('evdlState');
+  }
+  window.location.href=url+(url.includes('?')?'&':'?')+'restore=1';
+}
+
+(function(){
+  if(!new URLSearchParams(window.location.search).has('restore'))return;
+  const evdlRaw=sessionStorage.getItem('evdlState');
+  const ardRaw=sessionStorage.getItem('ardState');
+
+  function restoreFrom(raw){
+    try{
+      const state=JSON.parse(raw);
+      // Get binary data — either from state.data or from ardState
+      let dataB64=state.data;
+      if(!dataB64&&state.useArdData){
+        const ardRaw=sessionStorage.getItem('ardState');
+        if(ardRaw) dataB64=JSON.parse(ardRaw).data;
+      }
+      if(!dataB64)return;
+      const bin=atob(dataB64);
+      const buf=new Uint8Array(bin.length);
+      for(let i=0;i<bin.length;i++)buf[i]=bin.charCodeAt(i);
+      window._evdlRestoreHook=()=>{
+        if(state.texts&&state.texts.length===kgrTexts.length){
+          kgrTexts=state.texts;
+          if(state.modFlags)kgrMod=state.modFlags;
+          if(activeKgr!==null){document.getElementById('ca').value=kgrTexts[activeKgr];updHL();updLN();}
+          buildList();updDiff();
+        }
+      };
+      loadFile(new File([new Blob([buf])],state.fileName));
+    }catch(e){}
+  }
+
+  if(evdlRaw){
+    restoreFrom(evdlRaw);
+  } else if(ardRaw){
+    // Check if user already answered this question for this ARD file
+    try{
+      const ardState=JSON.parse(ardRaw);
+      const declinedKey='evdlDeclined:'+ardState.fileName;
+      if(sessionStorage.getItem(declinedKey)){
+        // User previously said no — don't ask again
+        return;
+      }
+      const choice=confirm(
+        `Open "${ardState.fileName}" from the ARD editor?\n\n`+
+        `OK = open the same ARD file here for script editing\n`+
+        `Cancel = start with empty editor (load your own .evdl or .ard)`
+      );
+      if(choice){
+        // Save lightweight evdlState that references ardState for the binary
+        sessionStorage.setItem('evdlState',JSON.stringify({
+          fileName:ardState.fileName, useArdData:true,
+        }));
+        restoreFrom(JSON.stringify({fileName:ardState.fileName,useArdData:true}));
+      } else {
+        // Remember the decline so we don't ask again
+        sessionStorage.setItem(declinedKey, '1');
+      }
+    }catch(e){}
+  }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,2190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KH1 ARD Entity Editor</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap');
+
+  :root {
+    --bg:       #0a0c10;
+    --panel:    #0e1117;
+    --border:   #1c2333;
+    --accent:   #00d4ff;
+    --accent2:  #ff6b35;
+    --accent3:  #7b2fff;
+    --text:     #c8d6e5;
+    --muted:    #c8a800;
+    --green:    #00ff9f;
+    --red:      #ff3860;
+    --yellow:   #ffdd57;
+    --row-even: #0e1117;
+    --row-odd:  #111520;
+    --row-sel:  #0d2235;
+    --row-mod:  #1a1a08;
+  }
+
+  body.light {
+    --bg:       #f0f2f5;
+    --panel:    #ffffff;
+    --border:   #c8cdd8;
+    --accent:   #0077aa;
+    --accent2:  #cc4400;
+    --accent3:  #6600cc;
+    --text:     #1a1e2a;
+    --muted:    #7a5800;
+    --green:    #006633;
+    --red:      #cc0033;
+    --yellow:   #996600;
+    --row-even: #ffffff;
+    --row-odd:  #f5f6fa;
+    --row-sel:  #d0e8f5;
+    --row-mod:  #fffbe6;
+  }
+  body.light::before { display: none; }
+  body.light header { background: linear-gradient(90deg,#e0e4ec,#eef0f5,#e0e4ec); }
+
+  /* Fix all hardcoded #060810 / #080b12 dark backgrounds */
+  body.light thead th { background: #e8eaf0 !important; }
+  body.light .status-bar { background: #e8eaf0 !important; }
+  body.light .line-numbers { background: #eef0f5 !important; }
+
+  /* Edit panel inline-style dark boxes */
+  body.light #editPanel > div > div[style*="background:var(--bg)"],
+  body.light #editPanel div[style*="background:var(--bg)"] {
+    background: #eef0f5 !important;
+    border-color: var(--border) !important;
+  }
+  body.light #editPanel div[style*="background:rgba(255,107,53"] {
+    background: rgba(204,68,0,0.06) !important;
+  }
+  body.light #editPanel div[style*="background:rgba(0,212,255"] {
+    background: rgba(0,119,170,0.06) !important;
+  }
+  body.light #editPanel div[style*="background:rgba(123,47,255"] {
+    background: rgba(102,0,204,0.06) !important;
+  }
+  body.light #editPanel div[style*="background:var(--bg)"] {
+    background: #eef0f5 !important;
+  }
+
+  /* EVDL identity dword display boxes */
+  body.light span[style*="background:rgba(0,212,255,0.08)"] {
+    background: rgba(0,119,170,0.1) !important;
+  }
+  body.light span[style*="background:rgba(255,107,53,0.08)"] {
+    background: rgba(204,68,0,0.1) !important;
+  }
+
+  /* Files tab legend */
+  body.light #paneFiles > div[style*="background:var(--bg)"] {
+    background: #eef0f5 !important;
+  }
+
+  /* Legend overlay */
+  body.light #legendPanel {
+    background: rgba(240,242,245,0.98) !important;
+  }
+  body.light #legendPanel table tr[style*="background:var(--row-odd)"] {
+    background: var(--row-odd) !important;
+  }
+
+  /* Compare panel */
+  body.light #comparePanel {
+    background: rgba(240,242,245,0.98) !important;
+  }
+  body.light #comparePanel div[style*="background:var(--bg)"] {
+    background: #eef0f5 !important;
+  }
+
+  /* Drop zone */
+  body.light .drop-zone { background: #f8f9fc; }
+
+  /* Error panel */
+  body.light .errors-panel { background: #fff0f2 !important; }
+
+  /* Hex view in edit panel */
+  body.light .hex-val { color: #224466 !important; }
+  body.light .hex-off { color: var(--muted) !important; }
+  body.light .hex-val.z-coord { color: var(--green) !important; }
+  body.light .hex-val.x-coord { color: var(--accent) !important; }
+  body.light .hex-val.y-coord { color: var(--accent2) !important; }
+  body.light .hex-val.scale   { color: var(--accent3) !important; }
+  body.light .hex-val.rot     { color: #aa3377 !important; }
+
+  /* Section list items */
+  body.light .section-item:hover { background: rgba(0,119,170,0.08) !important; }
+  body.light .section-item.active { background: rgba(0,119,170,0.12) !important; border-color: var(--accent) !important; }
+
+  /* Diff/count badges */
+  body.light .diff-count { background: rgba(153,102,0,0.1) !important; border-color: rgba(153,102,0,0.4) !important; }
+  body.light .count-badge { background: rgba(0,119,170,0.1) !important; border-color: rgba(0,119,170,0.4) !important; }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 13px;
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Scanline overlay */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background: repeating-linear-gradient(
+      0deg, transparent, transparent 2px,
+      rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px
+    );
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  /* ── Header ─────────────────────────── */
+  header {
+    background: linear-gradient(90deg, #080b12, #0e1520, #080b12);
+    border-bottom: 1px solid var(--accent);
+    padding: 8px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 0 30px rgba(0,212,255,0.15);
+    flex-wrap: wrap;
+    flex-shrink: 0;
+  }
+  header h1 {
+    font-family: 'Orbitron', monospace;
+    font-size: 15px;
+    font-weight: 900;
+    color: var(--accent);
+    text-shadow: 0 0 20px rgba(0,212,255,0.6);
+    letter-spacing: 2px;
+  }
+  header .sub {
+    color: var(--muted);
+    font-size: 10px;
+    letter-spacing: 1px;
+  }
+  .header-right {
+    margin-left: auto;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  /* ── Layout ──────────────────────────── */
+  .layout {
+    display: grid;
+    grid-template-columns: minmax(180px, 240px) 1fr;
+    grid-template-rows: auto 1fr;
+    flex: 1;
+    min-height: 0;
+    min-width: 0;
+  }
+
+  /* ── Toolbar ─────────────────────────── */
+  .toolbar {
+    grid-column: 1 / -1;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    padding: 8px 16px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  /* ── Left panel ──────────────────────── */
+  .left-panel {
+    background: var(--panel);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .panel-header {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    font-family: 'Orbitron', monospace;
+    font-size: 10px;
+    color: var(--accent);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .panel-header .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent);
+  }
+
+  .section-list {
+    overflow-y: auto;
+    flex: 1;
+  }
+  .section-item {
+    padding: 7px 14px;
+    cursor: pointer;
+    border-bottom: 1px solid rgba(28,35,51,0.5);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background 0.1s;
+    font-size: 12px;
+  }
+  .section-item:hover { background: rgba(0,212,255,0.05); }
+  .section-item.active {
+    background: rgba(0,212,255,0.1);
+    border-left: 2px solid var(--accent);
+    color: var(--accent);
+  }
+  .section-item .sec-num {
+    color: var(--muted);
+    font-size: 10px;
+    min-width: 28px;
+  }
+  .section-item .sec-count {
+    margin-left: auto;
+    color: var(--muted);
+    font-size: 10px;
+  }
+
+  /* ── Main panel ──────────────────────── */
+  .main-panel {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-width: 0;
+  }
+
+  /* ── Search bar ──────────────────────── */
+  .search-bar {
+    padding: 8px 14px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    background: var(--panel);
+  }
+  .search-bar input {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    padding: 5px 10px;
+    outline: none;
+    flex: 1;
+    transition: border-color 0.2s;
+  }
+  .search-bar input:focus { border-color: var(--accent); }
+  .count-badge {
+    background: rgba(0,212,255,0.1);
+    border: 1px solid rgba(0,212,255,0.3);
+    color: var(--accent);
+    padding: 2px 8px;
+    font-size: 11px;
+    white-space: nowrap;
+  }
+
+  /* ── Entity table ────────────────────── */
+  .table-wrap {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: auto;
+    min-height: 0;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 900px;
+  }
+  thead th {
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 7px 10px;
+    text-align: left;
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    white-space: nowrap;
+    cursor: pointer;
+    user-select: none;
+  }
+  thead th:hover { color: var(--text); }
+  thead th.sorted { color: var(--accent); }
+
+  tbody tr {
+    border-bottom: 1px solid rgba(28,35,51,0.4);
+    cursor: pointer;
+    transition: background 0.08s;
+  }
+  tbody tr:nth-child(even) { background: var(--row-even); }
+  tbody tr:nth-child(odd)  { background: var(--row-odd); }
+  tbody tr:hover { background: rgba(0,212,255,0.04); }
+  tbody tr.selected { background: var(--row-sel) !important; }
+  tbody tr.modified { background: var(--row-mod) !important; }
+  tbody tr.modified.selected { background: #1a200a !important; }
+
+  td {
+    padding: 6px 10px;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+  td.name-col { color: var(--green); font-weight: bold; }
+  td.num-col  { color: #7ec8e3; font-variant-numeric: tabular-nums; }
+  td.id-col   { color: var(--accent3); font-size: 11px; }
+  td.mod-badge {
+    color: var(--yellow);
+    font-size: 10px;
+  }
+
+  /* ── Edit panel ──────────────────────── */
+  .edit-panel {
+    background: var(--panel);
+    border-top: 1px solid var(--border);
+    padding: 12px 16px;
+    display: none;
+    gap: 14px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    max-height: 45vh;
+    flex-shrink: 0;
+  }
+  .edit-panel.visible { display: flex; flex-wrap: wrap; align-content: flex-start; }
+
+  .edit-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 160px;
+    flex: 0 0 auto;
+  }
+  .edit-section-title {
+    font-family: 'Orbitron', monospace;
+    font-size: 9px;
+    color: var(--accent);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    border-bottom: 1px solid rgba(0,212,255,0.2);
+    padding-bottom: 4px;
+    margin-bottom: 4px;
+  }
+
+  .field-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .field-label {
+    color: var(--muted);
+    font-size: 11px;
+    min-width: 50px;
+    text-align: right;
+  }
+  .field-input {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    padding: 4px 8px;
+    width: 100px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .field-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 8px rgba(0,212,255,0.2);
+  }
+  .field-input.changed {
+    border-color: var(--yellow);
+    box-shadow: 0 0 8px rgba(255,221,87,0.2);
+    color: var(--yellow);
+  }
+  .field-input[readonly] {
+    color: var(--muted);
+    cursor: default;
+  }
+
+  /* ── Buttons ─────────────────────────── */
+  .btn {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    padding: 7px 16px;
+    border: 1px solid;
+    cursor: pointer;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    transition: all 0.15s;
+    background: transparent;
+  }
+  .btn-accent {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .btn-accent:hover {
+    background: rgba(0,212,255,0.1);
+    box-shadow: 0 0 12px rgba(0,212,255,0.3);
+  }
+  .btn-green {
+    border-color: var(--green);
+    color: var(--green);
+  }
+  .btn-green:hover {
+    background: rgba(0,255,159,0.1);
+    box-shadow: 0 0 12px rgba(0,255,159,0.3);
+  }
+  .btn-orange {
+    border-color: var(--accent2);
+    color: var(--accent2);
+  }
+  .btn-orange:hover {
+    background: rgba(255,107,53,0.1);
+    box-shadow: 0 0 12px rgba(255,107,53,0.3);
+  }
+  .btn-red {
+    border-color: var(--red);
+    color: var(--red);
+  }
+  .btn-red:hover {
+    background: rgba(255,56,96,0.1);
+    box-shadow: 0 0 12px rgba(255,56,96,0.3);
+  }
+  .btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+
+  /* ── Status bar ──────────────────────── */
+  .status-bar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 16px;
+    background: var(--bg);
+    border-top: 1px solid var(--border);
+    font-size: 11px;
+    color: var(--muted);
+    grid-column: 1 / -1;
+  }
+  .status-ok   { color: var(--green); }
+  .status-warn { color: var(--yellow); }
+  .status-err  { color: var(--red); }
+  .status-sep { color: #1c2333; margin: 0 4px; }
+
+  /* ── Scrollbar ───────────────────────── */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); }
+  ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+  /* ── Drop zone ───────────────────────── */
+  .drop-zone {
+    border: 2px dashed var(--border);
+    color: var(--muted);
+    padding: 40px;
+    text-align: center;
+    margin: 40px;
+    transition: all 0.2s;
+    font-size: 14px;
+  }
+  .drop-zone.over {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(0,212,255,0.05);
+  }
+  .drop-zone h2 {
+    font-family: 'Orbitron', monospace;
+    margin-bottom: 12px;
+    color: var(--accent);
+  }
+
+  /* ── Hex display ─────────────────────── */
+  .hex-row {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    margin-bottom: 3px;
+    font-size: 11px;
+  }
+  .hex-off { color: var(--muted); min-width: 32px; }
+  .hex-val { color: #7ec8e3; }
+  .hex-val.z-coord { color: var(--green); }
+  .hex-val.x-coord { color: var(--accent); }
+  .hex-val.y-coord { color: var(--accent2); }
+  .hex-val.scale   { color: var(--accent3); }
+  .hex-val.rot     { color: #ff9fd4; }
+
+  /* ── Diff counter ────────────────────── */
+  .diff-count {
+    background: rgba(255,221,87,0.1);
+    border: 1px solid rgba(255,221,87,0.3);
+    color: var(--yellow);
+    padding: 2px 10px;
+    font-size: 11px;
+  }
+
+  .flex-gap { display: flex; gap: 8px; align-items: center; }
+  .ml-auto { margin-left: auto; }
+
+  /* apply-all section toggle */
+  label.toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    color: var(--muted);
+    font-size: 11px;
+  }
+  label.toggle input { accent-color: var(--accent); }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>▸ ARD ENTITY EDITOR</h1>
+    <div class="sub">KH1 FINAL MIX PC · ARD ENTITY EDITOR</div>
+  </div>
+  <div class="header-right">
+    <span id="fileName" style="color:var(--muted);font-size:12px;">No file loaded</span>
+    <button class="btn btn-accent" id="themeBtn" onclick="toggleTheme()" title="Toggle light/dark mode">☀ LIGHT</button>
+    <button class="btn btn-accent" onclick="document.getElementById('fileInput').click()">OPEN ARD</button>
+    <input type="file" id="fileInput" accept=".ard" style="display:none">
+    <button class="btn btn-red" id="closeBtn" style="display:none" onclick="closeFile()">CLOSE FILE</button>
+    <button class="btn btn-green" id="exportBtn" disabled onclick="exportFile()">SAVE PATCHED</button>
+    <a href="evdl_editor.html" class="btn btn-accent" style="text-decoration:none" onclick="saveStateAndNav(event,'evdl_editor.html')">▸ EVDL EDITOR</a>
+    <button class="btn btn-accent" id="compareBtn" style="display:none" onclick="document.getElementById('compareInput').click()">COMPARE PATCHED</button>
+    <input type="file" id="compareInput" accept=".ard" style="display:none">
+  </div>
+</header>
+
+<div class="layout" id="mainLayout" style="display:none;flex:1;min-height:0">
+  <div class="toolbar">
+    <button class="btn btn-orange" id="applyBtn" disabled onclick="applyEdit()">APPLY CHANGES</button>
+    <button class="btn btn-red" id="revertBtn" disabled onclick="revertSelected()">REVERT SELECTED</button>
+    <button class="btn btn-red" onclick="revertAll()" id="revertAllBtn" style="display:none">REVERT ALL</button>
+    <button class="btn btn-red" id="deleteBtn" disabled onclick="deleteSelected()">DELETE ENTITY</button>
+    <button class="btn btn-green" id="cloneBtn" disabled onclick="cloneSelected(parseInt(document.getElementById('cloneTarget').value))">+ CLONE ENTITY</button>
+    <select id="cloneTarget" disabled title="Clone to section"
+      style="background:var(--bg);border:1px solid var(--green);color:var(--green);font-family:'Share Tech Mono',monospace;font-size:11px;padding:4px 6px;cursor:pointer;display:none">
+    </select>
+    <button class="btn btn-accent" onclick="toggleLegend()" id="legendBtn">FIELD LEGEND</button>
+    <div class="flex-gap ml-auto">
+      <label class="toggle">
+        <input type="checkbox" id="syncSections">
+        Sync across sections
+      </label>
+      <div class="diff-count" id="diffCount" style="display:none">0 changes</div>
+    </div>
+  </div>
+
+  <!-- Legend overlay — spans full layout, shown/hidden by toggleLegend() -->
+  <div id="legendPanel" style="display:none;position:fixed;inset:0;z-index:100;background:rgba(6,8,16,0.96);overflow-y:auto;padding:32px 40px;font-family:'Share Tech Mono',monospace;">
+    <div style="max-width:860px;margin:0 auto">
+      <div style="display:flex;align-items:center;gap:16px;margin-bottom:24px;border-bottom:1px solid var(--accent);padding-bottom:12px">
+        <h2 style="font-family:'Orbitron',monospace;color:var(--accent);font-size:16px;letter-spacing:3px">ARD ENTITY FIELD LEGEND</h2>
+        <button class="btn btn-accent" style="margin-left:auto" onclick="toggleLegend()">CLOSE ✕</button>
+      </div>
+
+      <p style="color:var(--muted);font-size:11px;margin-bottom:20px;line-height:1.7">
+        Field layout verified from live memory and cross-referenced with the EVDL decompiler.<br>
+        Entry size: <span style="color:var(--accent)">0x78 bytes</span>.
+        All floats are little-endian IEEE 754. All integers are little-endian.
+      </p>
+
+      <!-- Identity block -->
+      <div style="margin-bottom:24px">
+        <div style="font-family:'Orbitron',monospace;font-size:10px;color:var(--accent2);letter-spacing:2px;margin-bottom:10px;border-bottom:1px solid rgba(255,107,53,0.3);padding-bottom:4px">⬡ IDENTITY  (+0x00 – +0x07)</div>
+        <table style="width:100%;border-collapse:collapse;font-size:12px">
+          <thead><tr style="color:var(--muted);font-size:10px;border-bottom:1px solid var(--border)">
+            <th style="text-align:left;padding:4px 8px;width:80px">OFFSET</th>
+            <th style="text-align:left;padding:4px 8px;width:80px">TYPE</th>
+            <th style="text-align:left;padding:4px 8px;width:120px">FIELD</th>
+            <th style="text-align:left;padding:4px 8px">DESCRIPTION</th>
+          </tr></thead>
+          <tbody>
+            <tr style="border-bottom:1px solid rgba(28,35,51,0.5)">
+              <td style="padding:5px 8px;color:var(--accent2)">+0x00</td><td style="padding:5px 8px;color:var(--muted)">u16</td>
+              <td style="padding:5px 8px;color:var(--accent2)">slot (flags)</td>
+              <td style="padding:5px 8px;color:var(--text)">Lo-word of EVDL identity dword. Sequential index used by EVDL scripts to look up this entity. Must be unique within the section. Sora=0x0000, Donald=0x0001, Goofy=0x0002.</td>
+            </tr>
+            <tr style="border-bottom:1px solid rgba(28,35,51,0.5);background:var(--row-odd)">
+              <td style="padding:5px 8px;color:var(--accent)">+0x02</td><td style="padding:5px 8px;color:var(--muted)">u16</td>
+              <td style="padding:5px 8px;color:var(--accent)">v1 (group)</td>
+              <td style="padding:5px 8px;color:var(--text)">Hi-word of EVDL identity dword. Entity group — defines which class of object this is. Combined with slot: <span style="color:var(--accent3)">EVDL push value = v1 × 0x10000 + slot</span>. Known: 3=players, 4=props, 9=boxes. Do not change unless you know the correct group.</td>
+            </tr>
+            <tr style="border-bottom:1px solid rgba(28,35,51,0.5)">
+              <td style="padding:5px 8px;color:var(--accent2)">+0x04</td><td style="padding:5px 8px;color:var(--muted)">u32</td>
+              <td style="padding:5px 8px;color:var(--accent2)">push_cond</td>
+              <td style="padding:5px 8px;color:var(--text)">Condition ID read at runtime by the <span style="color:var(--accent3)">push_cond (0x15)</span> EVDL opcode. The engine checks this value against world/room flags to gate script execution for this entity. Copy from an entity of the same type — do not invent values.</td>
+            </tr>
+            <tr style="border-bottom:1px solid rgba(28,35,51,0.5);background:var(--row-odd)">
+              <td style="padding:5px 8px;color:var(--muted)">+0x08</td><td style="padding:5px 8px;color:var(--muted)">u32</td>
+              <td style="padding:5px 8px;color:var(--muted)">padding</td>
+              <td style="padding:5px 8px;color:var(--muted)">Always 0x00000000.</td>
+            </tr>
+            <tr style="border-bottom:1px solid rgba(28,35,51,0.5)">
+              <td style="padding:5px 8px;color:var(--muted)">+0x0C</td><td style="padding:5px 8px;color:var(--muted)">u32</td>
+              <td style="padding:5px 8px;color:var(--muted)">RR (reserved)</td>
+              <td style="padding:5px 8px;color:var(--muted)">Written by the game engine at runtime. Not meaningful in the file — do not edit.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Unknown floats -->
+      <div style="margin-bottom:24px">
+        <div style="font-family:'Orbitron',monospace;font-size:10px;color:var(--muted);letter-spacing:2px;margin-bottom:10px;border-bottom:1px solid rgba(74,85,104,0.4);padding-bottom:4px">UNKNOWN FLOATS  (+0x10 – +0x1B)</div>
+        <table style="width:100%;border-collapse:collapse;font-size:12px">
+          <thead><tr style="color:var(--muted);font-size:10px;border-bottom:1px solid var(--border)">
+            <th style="text-align:left;padding:4px 8px;width:80px">OFFSET</th><th style="text-align:left;padding:4px 8px;width:80px">TYPE</th><th style="text-align:left;padding:4px 8px">NOTES</th>
+          </tr></thead>
+          <tbody>
+            <tr style="border-bottom:1px solid rgba(28,35,51,0.5)"><td style="padding:5px 8px;color:var(--muted)">+0x10</td><td style="padding:5px 8px;color:var(--muted)">f32</td><td style="padding:5px 8px;color:var(--muted)">Unknown float 0. Observed 120.0 for mo_box_01.</td></tr>
+            <tr style="border-bottom:1px solid rgba(28,35,51,0.5);background:var(--row-odd)"><td style="padding:5px 8px;color:var(--muted)">+0x14</td><td style="padding:5px 8px;color:var(--muted)">f32</td><td style="padding:5px 8px;color:var(--muted)">Unknown float 1. Observed 91.0.</td></tr>
+            <tr style="border-bottom:1px solid rgba(28,35,51,0.5)"><td style="padding:5px 8px;color:var(--muted)">+0x18</td><td style="padding:5px 8px;color:var(--muted)">f32</td><td style="padding:5px 8px;color:var(--muted)">Unknown float 2. Observed 600.0.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Spawn position -->
+      <div style="margin-bottom:24px">
+        <div style="font-family:'Orbitron',monospace;font-size:10px;color:var(--green);letter-spacing:2px;margin-bottom:10px;border-bottom:1px solid rgba(0,255,159,0.3);padding-bottom:4px">SPAWN POSITION  (+0x1C – +0x27)</div>
+        <table style="width:100%;border-collapse:collapse;font-size:12px">
+          <thead><tr style="color:var(--muted);font-size:10px;border-bottom:1px solid var(--border)">
+            <th style="text-align:left;padding:4px 8px;width:80px">OFFSET</th><th style="text-align:left;padding:4px 8px;width:80px">TYPE</th><th style="text-align:left;padding:4px 8px;width:60px">AXIS</th><th style="text-align:left;padding:4px 8px">DESCRIPTION</th>
+          </tr></thead>
+          <tbody>
+            <tr style="border-bottom:1px solid rgba(28,35,51,0.5)"><td style="padding:5px 8px;color:var(--green)">+0x1C</td><td style="padding:5px 8px;color:var(--muted)">f32</td><td style="padding:5px 8px;color:var(--green)">Z</td><td style="padding:5px 8px;color:var(--text)">World Z spawn position. Copied to runtime entity+0x10.</td></tr>
+            <tr style="border-bottom:1px solid rgba(28,35,51,0.5);background:var(--row-odd)"><td style="padding:5px 8px;color:var(--accent)">+0x20</td><td style="padding:5px 8px;color:var(--muted)">f32</td><td style="padding:5px 8px;color:var(--accent)">X</td><td style="padding:5px 8px;color:var(--text)">World X spawn position. Copied to runtime entity+0x14.</td></tr>
+            <tr style="border-bottom:1px solid rgba(28,35,51,0.5)"><td style="padding:5px 8px;color:var(--accent2)">+0x24</td><td style="padding:5px 8px;color:var(--muted)">f32</td><td style="padding:5px 8px;color:var(--accent2)">Y</td><td style="padding:5px 8px;color:var(--text)">World Y spawn position. Copied to runtime entity+0x18.</td></tr>
+            <tr style="border-bottom:1px solid rgba(28,35,51,0.5);background:var(--row-odd)"><td style="padding:5px 8px;color:var(--muted)">+0x28</td><td style="padding:5px 8px;color:var(--muted)">f32</td><td style="padding:5px 8px;color:var(--muted)">?</td><td style="padding:5px 8px;color:var(--muted)">Unknown float 6. Purpose unclear.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Scale & Rotation -->
+      <div style="margin-bottom:24px">
+        <div style="font-family:'Orbitron',monospace;font-size:10px;color:var(--accent3);letter-spacing:2px;margin-bottom:10px;border-bottom:1px solid rgba(123,47,255,0.3);padding-bottom:4px">SCALE & ROTATION  (+0x2C – +0x43)</div>
+        <table style="width:100%;border-collapse:collapse;font-size:12px">
+          <thead><tr style="color:var(--muted);font-size:10px;border-bottom:1px solid var(--border)">
+            <th style="text-align:left;padding:4px 8px;width:80px">OFFSET</th><th style="text-align:left;padding:4px 8px;width:80px">TYPE</th><th style="text-align:left;padding:4px 8px;width:80px">FIELD</th><th style="text-align:left;padding:4px 8px">DESCRIPTION</th>
+          </tr></thead>
+          <tbody>
+            <tr style="border-bottom:1px solid rgba(28,35,51,0.5)"><td style="padding:5px 8px;color:var(--accent3)">+0x2C</td><td style="padding:5px 8px;color:var(--muted)">f32</td><td style="padding:5px 8px;color:var(--accent3)">scaleX</td><td style="padding:5px 8px;color:var(--text)">X scale factor. 1.0 = default size.</td></tr>
+            <tr style="border-bottom:1px solid rgba(28,35,51,0.5);background:var(--row-odd)"><td style="padding:5px 8px;color:var(--accent3)">+0x30</td><td style="padding:5px 8px;color:var(--muted)">f32</td><td style="padding:5px 8px;color:var(--accent3)">scaleY</td><td style="padding:5px 8px;color:var(--text)">Y scale factor.</td></tr>
+            <tr style="border-bottom:1px solid rgba(28,35,51,0.5)"><td style="padding:5px 8px;color:var(--accent3)">+0x34</td><td style="padding:5px 8px;color:var(--muted)">f32</td><td style="padding:5px 8px;color:var(--accent3)">scaleZ</td><td style="padding:5px 8px;color:var(--text)">Z scale factor.</td></tr>
+            <tr style="border-bottom:1px solid rgba(28,35,51,0.5);background:var(--row-odd)"><td style="padding:5px 8px;color:#ff9fd4">+0x38</td><td style="padding:5px 8px;color:var(--muted)">f32</td><td style="padding:5px 8px;color:#ff9fd4">rotX</td><td style="padding:5px 8px;color:var(--text)">X rotation (radians).</td></tr>
+            <tr style="border-bottom:1px solid rgba(28,35,51,0.5)"><td style="padding:5px 8px;color:#ff9fd4">+0x3C</td><td style="padding:5px 8px;color:var(--muted)">f32</td><td style="padding:5px 8px;color:#ff9fd4">rotY</td><td style="padding:5px 8px;color:var(--text)">Y rotation (radians).</td></tr>
+            <tr style="border-bottom:1px solid rgba(28,35,51,0.5);background:var(--row-odd)"><td style="padding:5px 8px;color:#ff9fd4">+0x40</td><td style="padding:5px 8px;color:var(--muted)">f32</td><td style="padding:5px 8px;color:#ff9fd4">rotZ</td><td style="padding:5px 8px;color:var(--text)">Z rotation (radians).</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Unknown block -->
+      <div style="margin-bottom:24px">
+        <div style="font-family:'Orbitron',monospace;font-size:10px;color:var(--muted);letter-spacing:2px;margin-bottom:10px;border-bottom:1px solid rgba(74,85,104,0.4);padding-bottom:4px">UNKNOWN BLOCK  (+0x44 – +0x5F)</div>
+        <table style="width:100%;border-collapse:collapse;font-size:12px">
+          <tbody>
+            <tr style="border-bottom:1px solid rgba(28,35,51,0.5)"><td style="padding:5px 8px;color:var(--muted);width:80px">+0x44</td><td style="padding:5px 8px;color:var(--muted);width:80px">f32</td><td style="padding:5px 8px;color:var(--muted)">Unknown float 10 (FA in docs).</td></tr>
+            <tr style="border-bottom:1px solid rgba(28,35,51,0.5);background:var(--row-odd)"><td style="padding:5px 8px;color:var(--muted)">+0x48</td><td style="padding:5px 8px;color:var(--muted)">u32</td><td style="padding:5px 8px;color:var(--muted)">RI — Reward Index. For treasure chests: index into the reward table in the ELF. Otherwise unused.</td></tr>
+            <tr style="border-bottom:1px solid rgba(28,35,51,0.5)"><td style="padding:5px 8px;color:var(--muted)">+0x4C</td><td style="padding:5px 8px;color:var(--muted)">u32</td><td style="padding:5px 8px;color:var(--muted)">Unknown 3.</td></tr>
+            <tr style="border-bottom:1px solid rgba(28,35,51,0.5);background:var(--row-odd)"><td style="padding:5px 8px;color:var(--muted)">+0x50</td><td style="padding:5px 8px;color:var(--muted)">u8</td><td style="padding:5px 8px;color:var(--muted)">Unknown 4.</td></tr>
+            <tr style="border-bottom:1px solid rgba(28,35,51,0.5)"><td style="padding:5px 8px;color:var(--yellow)">+0x51</td><td style="padding:5px 8px;color:var(--muted)">u8</td><td style="padding:5px 8px;color:var(--yellow)">?1 — Entity type / controller class. Possible values: [4,8,9] = MOA-related, [5,10] = MFA-related, [6,7] = unknown. Determines which controller the engine boots. Copy from an existing entity of the same kind.</td></tr>
+            <tr style="border-bottom:1px solid rgba(28,35,51,0.5);background:var(--row-odd)"><td style="padding:5px 8px;color:var(--muted)">+0x52</td><td style="padding:5px 8px;color:var(--muted)">u8</td><td style="padding:5px 8px;color:var(--muted)">Unknown 6. Used when ?1 is [4,8,9] or [5,10].</td></tr>
+            <tr style="border-bottom:1px solid rgba(28,35,51,0.5)"><td style="padding:5px 8px;color:var(--muted)">+0x53</td><td style="padding:5px 8px;color:var(--muted)">u8</td><td style="padding:5px 8px;color:var(--muted)">Unknown 7.</td></tr>
+            <tr style="border-bottom:1px solid rgba(28,35,51,0.5);background:var(--row-odd)"><td style="padding:5px 8px;color:var(--muted)">+0x54</td><td style="padding:5px 8px;color:var(--muted)">u32</td><td style="padding:5px 8px;color:var(--muted)">Unknown 8.</td></tr>
+            <tr style="border-bottom:1px solid rgba(28,35,51,0.5)"><td style="padding:5px 8px;color:var(--muted)">+0x58</td><td style="padding:5px 8px;color:var(--muted)">u32</td><td style="padding:5px 8px;color:var(--muted)">Unknown 9.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Model refs -->
+      <div style="margin-bottom:24px">
+        <div style="font-family:'Orbitron',monospace;font-size:10px;color:var(--accent3);letter-spacing:2px;margin-bottom:10px;border-bottom:1px solid rgba(123,47,255,0.3);padding-bottom:4px">MODEL FILE REFERENCES  (+0x60 – +0x67)</div>
+        <table style="width:100%;border-collapse:collapse;font-size:12px">
+          <thead><tr style="color:var(--muted);font-size:10px;border-bottom:1px solid var(--border)">
+            <th style="text-align:left;padding:4px 8px;width:80px">OFFSET</th><th style="text-align:left;padding:4px 8px;width:80px">TYPE</th><th style="text-align:left;padding:4px 8px;width:80px">FIELD</th><th style="text-align:left;padding:4px 8px">DESCRIPTION</th>
+          </tr></thead>
+          <tbody>
+            <tr style="border-bottom:1px solid rgba(28,35,51,0.5)"><td style="padding:5px 8px;color:var(--accent3)">+0x60</td><td style="padding:5px 8px;color:var(--muted)">u32</td><td style="padding:5px 8px;color:var(--accent3)">ME (MDLS idx)</td><td style="padding:5px 8px;color:var(--text)">Index into the Filenames Section (Section 5). Points to the mesh/model filename (.mdls or .moa). Hover in the editor to see the resolved filename.</td></tr>
+            <tr style="border-bottom:1px solid rgba(28,35,51,0.5);background:var(--row-odd)"><td style="padding:5px 8px;color:var(--accent3)">+0x64</td><td style="padding:5px 8px;color:var(--muted)">u32</td><td style="padding:5px 8px;color:var(--accent3)">MV (MSET idx)</td><td style="padding:5px 8px;color:var(--text)">Index into the Filenames Section (Section 5). Points to the moveset/animation filename (.mset or .mfa). Hover in the editor to see the resolved filename.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Name -->
+      <div style="margin-bottom:32px">
+        <div style="font-family:'Orbitron',monospace;font-size:10px;color:var(--green);letter-spacing:2px;margin-bottom:10px;border-bottom:1px solid rgba(0,255,159,0.3);padding-bottom:4px">ENTITY STRING  (+0x68 – +0x77)</div>
+        <table style="width:100%;border-collapse:collapse;font-size:12px">
+          <tbody>
+            <tr><td style="padding:5px 8px;color:var(--green);width:80px">+0x68</td><td style="padding:5px 8px;color:var(--muted);width:80px">char[16]</td><td style="padding:5px 8px;color:var(--text)">ES — Entity string. Null-terminated C-string, padded to 16 bytes. Used as the entity name in EVDL scripts and debug display. Max 15 characters + null.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- push_cond note -->
+      <div style="background:var(--bg);border:1px solid rgba(123,47,255,0.4);padding:14px 16px;margin-bottom:16px;font-size:11px;line-height:1.8">
+        <div style="font-family:'Orbitron',monospace;font-size:9px;color:var(--accent3);letter-spacing:2px;margin-bottom:8px">NOTE ON push_cond AND EVDL OPCODE 0x15</div>
+        <span style="color:var(--muted)">The </span><span style="color:var(--accent3)">push_cond (0x15)</span><span style="color:var(--muted)"> opcode in the EVDL VM reads the </span><span style="color:var(--accent2)">push_cond</span><span style="color:var(--muted)"> field from the entity's runtime slot before evaluating world/room flags. It is </span><span style="color:var(--yellow)">not</span><span style="color:var(--muted)"> a generic wide-immediate push — it gates script execution on game state. This means two entities of the same type should share the same </span><span style="color:var(--accent2)">push_cond</span><span style="color:var(--muted)"> value. Always copy it from an existing entity of the same class.</span>
+      </div>
+
+      <div style="font-size:10px;color:var(--muted);line-height:1.8">
+        Sources: ARD Documentation by Some1fromthedark · EVDL decompiler (handler verified @ 0x1404E5DB0) · live memory analysis
+      </div>
+    </div>
+  </div>
+
+  <div class="left-panel">
+    <div class="panel-header" style="flex-direction:column;gap:8px;padding-bottom:0">
+      <div style="display:flex;gap:0;width:100%">
+        <button id="tabSections" onclick="switchTab('sections')" style="flex:1;background:rgba(0,212,255,0.15);border:none;border-bottom:2px solid var(--accent);color:var(--accent);font-family:'Orbitron',monospace;font-size:9px;letter-spacing:1px;padding:7px 4px;cursor:pointer">SECTIONS</button>
+        <button id="tabFiles" onclick="switchTab('files')" style="flex:1;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--muted);font-family:'Orbitron',monospace;font-size:9px;letter-spacing:1px;padding:7px 4px;cursor:pointer">FILES</button>
+      </div>
+    </div>
+    <div id="paneSections" style="display:flex;flex-direction:column;overflow:hidden;flex:1">
+      <div class="section-list" id="sectionList"></div>
+    </div>
+    <div id="paneFiles" style="display:none;flex-direction:column;overflow:hidden;flex:1">
+      <!-- File type legend -->
+      <div style="padding:7px 10px;border-bottom:1px solid var(--border);font-size:10px;line-height:1.8;background:var(--bg)">
+        <span style="color:var(--yellow)">■ .mdls .moa</span><span style="color:var(--muted)"> — mesh/model (MOA)</span><br>
+        <span style="color:var(--green)">■ .mset .mfa</span><span style="color:var(--muted)"> — moveset/anim (MFA)</span>
+      </div>
+      <!-- Add input -->
+      <div style="padding:8px 10px;border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:4px">
+        <div style="display:flex;gap:6px;align-items:center">
+          <input id="newFilename" type="text" maxlength="31" placeholder="filename (max 31 chars)"
+            style="flex:1;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:'Share Tech Mono',monospace;font-size:11px;padding:4px 7px;outline:none"
+            onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"
+            onkeydown="if(event.key==='Enter')addFilename()" oninput="clearExtWarn()">
+          <button class="btn btn-green" style="padding:4px 10px;font-size:11px" onclick="addFilename()">ADD</button>
+        </div>
+        <div id="extWarn" style="display:none;font-size:10px;color:var(--accent2);transition:opacity 0.5s">
+          Did you forget a file extension? (.mdls .mset .moa .mfa)
+        </div>
+      </div>
+      <div style="overflow-y:auto;flex:1" id="filenameList"></div>
+    </div>
+  </div>
+
+  <div class="main-panel">
+    <div class="search-bar">
+      <input type="text" id="searchInput" placeholder="Filter entities by name..." oninput="filterTable()">
+      <div class="count-badge" id="countBadge">0 entities</div>
+    </div>
+    <div class="table-wrap">
+      <table id="entityTable">
+        <thead>
+          <tr>
+            <th onclick="sortBy('idx')">#</th>
+            <th onclick="sortBy('name')">NAME</th>
+            <th onclick="sortBy('z')">Z</th>
+            <th onclick="sortBy('x')">X</th>
+            <th onclick="sortBy('y')">Y</th>
+            <th onclick="sortBy('scaleX')">SCX</th>
+            <th onclick="sortBy('scaleY')">SCY</th>
+            <th onclick="sortBy('scaleZ')">SCZ</th>
+            <th onclick="sortBy('rotX')">RX</th>
+            <th onclick="sortBy('rotY')">RY</th>
+            <th onclick="sortBy('rotZ')">RZ</th>
+            <th onclick="sortBy('v1')">V1</th>
+            <th>MDLS</th>
+            <th>MSET</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="entityBody"></tbody>
+      </table>
+    </div>
+
+    <div class="edit-panel" id="editPanel">
+      <!-- EVDL / Identity — +0x00 block -->
+      <div class="edit-section" style="min-width:280px">
+        <div class="edit-section-title" style="color:var(--accent2)">⬡ EVDL IDENTITY  +0x00</div>
+
+        <!-- Combined dword display -->
+        <div style="background:var(--bg);border:1px solid rgba(255,107,53,0.3);padding:8px 10px;margin-bottom:10px;font-size:11px">
+          <div style="color:var(--muted);font-size:9px;letter-spacing:1px;margin-bottom:4px">FULL DWORD  (+0x00)</div>
+          <div style="display:flex;gap:0;font-family:'Share Tech Mono',monospace;font-size:13px;letter-spacing:1px">
+            <span style="color:var(--accent);background:rgba(0,212,255,0.08);padding:3px 8px;border:1px solid rgba(0,212,255,0.3)" id="dword_hiword" title="hi-word: group (v1)">0000</span>
+            <span style="color:var(--accent2);background:rgba(255,107,53,0.08);padding:3px 8px;border:1px solid rgba(255,107,53,0.3)" id="dword_loword" title="lo-word: slot index (flags)">0000</span>
+          </div>
+          <div style="display:flex;gap:0;font-size:9px;color:var(--muted);margin-top:2px">
+            <span style="width:66px;text-align:center">hi-word (v1) <span id="v1GroupName" style="color:var(--green)"></span></span>
+            <span style="width:66px;text-align:center">lo-word (slot)</span>
+          </div>
+        </div>
+
+        <!-- Slot index (lo-word, flags field) -->
+        <div style="margin-bottom:8px;padding:7px 8px;border:1px solid rgba(255,107,53,0.2);background:rgba(255,107,53,0.03)">
+          <div style="font-size:9px;color:var(--accent2);letter-spacing:1px;margin-bottom:5px">LO-WORD · BYTES 0-1 · SLOT INDEX</div>
+          <div class="field-row">
+            <span class="field-label" style="color:var(--accent2);font-size:10px;min-width:40px">slot</span>
+            <input class="field-input" id="editFlags" type="text" placeholder="0x0000" style="width:80px" oninput="markChanged(this);updateEvdlPreview()">
+            <span style="color:var(--muted);font-size:10px">(hex)</span>
+          </div>
+          <div style="margin-top:5px;font-size:10px;color:var(--muted);line-height:1.6">
+            Sequential index for EVDL script lookup.<br>
+            <span style="color:#7ec8e3">Sora=0x0000 · Donald=0x0001 · Goofy=0x0002</span><br>
+            Must be <span style="color:var(--yellow)">unique within this section.</span>
+          </div>
+        </div>
+
+        <!-- Live computed EVDL push value -->
+        <div style="background:var(--bg);border:1px solid rgba(123,47,255,0.4);padding:7px 10px;margin-bottom:8px">
+          <div style="font-size:9px;color:var(--accent3);letter-spacing:1px;margin-bottom:3px">EVDL PUSH VALUE  (computed)</div>
+          <div style="font-size:14px;color:var(--accent3);font-family:'Share Tech Mono',monospace;letter-spacing:2px" id="evdlPushValue">0x00000000</div>
+          <div style="font-size:9px;color:var(--muted);margin-top:2px">= group × 0x10000 + slot</div>
+          <div style="font-size:9px;color:var(--muted);margin-top:1px">Used in: <span style="color:var(--accent3)" id="evdlExampleCall">Display_model(0x00000000)</span></div>
+        </div>
+
+        <!-- push_cond, v1 (editable), name -->
+        <div class="field-row" style="margin-bottom:4px">
+          <span class="field-label" style="color:var(--accent2);font-size:10px">+0x04</span>
+          <input class="field-input" id="editPushCond" type="text" placeholder="0x..." style="width:90px" oninput="markChanged(this)">
+          <span style="color:var(--muted);font-size:10px">push_cond</span>
+        </div>
+        <div class="field-row" style="margin-bottom:4px">
+          <span class="field-label" style="color:var(--accent);font-size:10px">+0x02</span>
+          <input class="field-input" id="editV1" type="number" min="0" max="65535" style="width:60px" oninput="markChanged(this);syncV1Display()" onchange="markChanged(this);syncV1Display()">
+          <span style="color:var(--muted);font-size:10px">v1 group</span>
+        </div>
+        <div class="field-row">
+          <span class="field-label" style="font-size:10px">name</span>
+          <input class="field-input" id="editName" type="text" maxlength="15" style="width:120px" oninput="markChanged(this)">
+        </div>
+      </div>
+
+      <!-- Position -->
+      <div class="edit-section">
+        <div class="edit-section-title">Position</div>
+        <div class="field-row">
+          <span class="field-label" style="color:var(--green)">Z +1C</span>
+          <input class="field-input" id="editZ" type="number" step="0.001" oninput="markChanged(this)" onchange="markChanged(this)">
+        </div>
+        <div class="field-row">
+          <span class="field-label" style="color:var(--accent)">X +20</span>
+          <input class="field-input" id="editX" type="number" step="0.001" oninput="markChanged(this)" onchange="markChanged(this)">
+        </div>
+        <div class="field-row">
+          <span class="field-label" style="color:var(--accent2)">Y +24</span>
+          <input class="field-input" id="editY" type="number" step="0.001" oninput="markChanged(this)" onchange="markChanged(this)">
+        </div>
+      </div>
+
+      <!-- Scale -->
+      <div class="edit-section">
+        <div class="edit-section-title">Scale</div>
+        <div class="field-row">
+          <span class="field-label">SCX</span>
+          <input class="field-input" id="editSX" type="number" step="0.001" oninput="markChanged(this)" onchange="markChanged(this)">
+        </div>
+        <div class="field-row">
+          <span class="field-label">SCY</span>
+          <input class="field-input" id="editSY" type="number" step="0.001" oninput="markChanged(this)" onchange="markChanged(this)">
+        </div>
+        <div class="field-row">
+          <span class="field-label">SCZ</span>
+          <input class="field-input" id="editSZ" type="number" step="0.001" oninput="markChanged(this)" onchange="markChanged(this)">
+        </div>
+      </div>
+
+      <!-- Rotation -->
+      <div class="edit-section">
+        <div class="edit-section-title">Rotation</div>
+        <div class="field-row">
+          <span class="field-label">RX</span>
+          <input class="field-input" id="editRX" type="number" step="0.001" oninput="markChanged(this)" onchange="markChanged(this)">
+        </div>
+        <div class="field-row">
+          <span class="field-label">RY</span>
+          <input class="field-input" id="editRY" type="number" step="0.001" oninput="markChanged(this)" onchange="markChanged(this)">
+        </div>
+        <div class="field-row">
+          <span class="field-label">RZ</span>
+          <input class="field-input" id="editRZ" type="number" step="0.001" oninput="markChanged(this)" onchange="markChanged(this)">
+        </div>
+      </div>
+
+      <!-- File refs -->
+      <div class="edit-section">
+        <div class="edit-section-title">Model Files</div>
+        <div class="field-row">
+          <span class="field-label" style="font-size:10px">MDLS idx</span>
+          <input class="field-input" id="editME" type="number" min="0" style="width:60px" oninput="markChanged(this)" onchange="markChanged(this)">
+        </div>
+        <div style="font-size:10px;color:var(--accent3);margin-left:58px;margin-bottom:4px" id="meName"></div>
+        <div class="field-row">
+          <span class="field-label" style="font-size:10px">MSET idx</span>
+          <input class="field-input" id="editMV" type="number" min="0" style="width:60px" oninput="markChanged(this)" onchange="markChanged(this)">
+        </div>
+        <div style="font-size:10px;color:var(--accent3);margin-left:58px" id="mvName"></div>
+        <div style="margin-top:8px;font-size:10px;color:var(--muted);border-top:1px solid var(--border);padding-top:6px">
+          Index into section 3 filenames.<br>
+          Cannot add new files here.
+        </div>
+      </div>
+
+      <!-- Reward Index -->
+      <div class="edit-section">
+        <div class="edit-section-title" style="color:var(--yellow)">Reward (+0x48)</div>
+        <div class="field-row">
+          <span class="field-label" style="color:var(--yellow);font-size:10px">RI</span>
+          <input class="field-input" id="editRI" type="number" min="0" style="width:70px" oninput="markChanged(this)" onchange="markChanged(this)">
+        </div>
+        <div style="margin-top:6px;font-size:10px;color:var(--muted);line-height:1.6;border-top:1px solid var(--border);padding-top:6px">
+          Reward Index — for treasure<br>
+          chests: index into the reward<br>
+          table in the ELF binary.<br>
+          <span style="color:var(--text)">Unused for non-chest entities.</span>
+        </div>
+      </div>
+
+      <!-- Raw hex -->
+      <div class="edit-section" style="min-width:220px">
+        <div class="edit-section-title">Entity Raw Bytes</div>
+        <div id="hexView" style="font-size:10px;line-height:1.6"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="status-bar" id="statusBar">
+    <span class="status-ok">READY</span>
+    <span class="status-sep">|</span>
+    <span id="statusText">Open an ARD file to begin</span>
+  </div>
+</div>
+
+<!-- Compare overlay -->
+<div id="comparePanel" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(6,8,16,0.97);overflow-y:auto;padding:28px 36px;font-family:'Share Tech Mono',monospace;">
+  <div style="max-width:960px;margin:0 auto">
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;border-bottom:1px solid var(--accent);padding-bottom:12px">
+      <h2 style="font-family:'Orbitron',monospace;color:var(--accent);font-size:15px;letter-spacing:3px">ARD STRUCTURE COMPARE</h2>
+      <button class="btn btn-accent" style="margin-left:auto" onclick="document.getElementById('comparePanel').style.display='none'">CLOSE ✕</button>
+    </div>
+    <div style="display:flex;gap:12px;margin-bottom:16px;font-size:11px">
+      <div style="flex:1;padding:8px 12px;background:var(--bg);border:1px solid var(--border)">
+        <div style="color:var(--muted);font-size:9px;letter-spacing:1px;margin-bottom:4px">ORIGINAL</div>
+        <div id="cmpOrigName" style="color:var(--text)">—</div>
+        <div id="cmpOrigSize" style="color:var(--muted);font-size:10px"></div>
+      </div>
+      <div style="flex:1;padding:8px 12px;background:var(--bg);border:1px solid var(--border)">
+        <div style="color:var(--muted);font-size:9px;letter-spacing:1px;margin-bottom:4px">PATCHED</div>
+        <div id="cmpPatchName" style="color:var(--text)">—</div>
+        <div id="cmpPatchSize" style="color:var(--muted);font-size:10px"></div>
+      </div>
+      <div id="cmpVerdict" style="flex:1;padding:8px 12px;background:var(--bg);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-family:'Orbitron',monospace;font-size:12px;letter-spacing:2px">
+        —
+      </div>
+    </div>
+    <div id="cmpResults" style="font-size:11px;line-height:2"></div>
+  </div>
+</div>
+
+<!-- Drop zone shown before file load -->
+<div id="dropZone" class="drop-zone">
+  <h2>DROP ARD FILE HERE</h2>
+  <p>or click <strong>OPEN ARD</strong> above</p>
+  <p style="margin-top:12px;font-size:11px;color:var(--muted)">Supports: al01 dh01 dh02 dh03 dh05 dh06 tw01 ...</p>
+</div>
+
+<script>
+// ── State ─────────────────────────────────────────────────
+let fileData    = null;   // ArrayBuffer (original)
+let workData    = null;   // Uint8Array (mutable working copy)
+let fileName    = '';
+let sections    = [];     // array of section offsets
+let filenames   = [];     // section 3 filename strings
+let flagSections = [];    // [{secIdx, secStart, sub0abs, entities:[{...}]}]
+let activeSec   = null;   // current flagSections index
+let selectedEnt = null;   // {secFlagIdx, entIdx}
+let modifications= new Map(); // "secFlagIdx:entIdx" -> patch object
+let sortCol     = 'idx';
+let sortAsc     = true;
+let filterStr   = '';
+
+// ── Struct layout (confirmed from live memory) ────────────
+const OFF = {
+  // entry+0x00: u16 flags, u16 v1
+  flags:  0x00,  // u16
+  v1:     0x02,  // u16
+  push_cond: 0x04,  // u32  — condition ID read by push_cond opcode (0x15)
+  unk08:  0x08,
+  unk0C:  0x0C,
+  unk10:  0x10,  // f32  (120 for mo_box_01)
+  unk14:  0x14,  // f32  (91)
+  unk18:  0x18,  // f32  (600)
+  Z:      0x1C,  // f32  --> runtime entity+0x10
+  X:      0x20,  // f32  --> runtime entity+0x14
+  Y:      0x24,  // f32  --> runtime entity+0x18
+  unk28:  0x28,
+  scaleX: 0x2C,  // f32
+  scaleY: 0x30,  // f32
+  scaleZ: 0x34,  // f32
+  rotX:   0x38,  // f32
+  rotY:   0x3C,  // f32
+  rotZ:   0x40,  // f32
+  unk44:  0x44,  // f32
+  RI:     0x48,  // u32  — Reward Index (chest loot table index in ELF)
+  unk4C:  0x4C,
+  unk50:  0x50,
+  unk54:  0x54,
+  unk58:  0x58,
+  unk5C:  0x5C,
+  ME:     0x60,  // u32
+  MV:     0x64,  // u32
+  name:   0x68,  // 16 bytes null-padded
+};
+const ENTRY_SIZE = 0x78;
+
+// ── Binary helpers ────────────────────────────────────────
+function u32(arr, off) {
+  return arr[off] | (arr[off+1]<<8) | (arr[off+2]<<16) | (arr[off+3]<<24);
+}
+function u16(arr, off) { return arr[off] | (arr[off+1]<<8); }
+function f32(arr, off) {
+  const b = new Uint8Array([arr[off],arr[off+1],arr[off+2],arr[off+3]]);
+  return new DataView(b.buffer).getFloat32(0, true);
+}
+function setF32(arr, off, val) {
+  const dv = new DataView(new ArrayBuffer(4));
+  dv.setFloat32(0, val, true);
+  arr[off]   = dv.getUint8(0);
+  arr[off+1] = dv.getUint8(1);
+  arr[off+2] = dv.getUint8(2);
+  arr[off+3] = dv.getUint8(3);
+}
+function setU32(arr, off, val) {
+  arr[off]   = val & 0xFF;
+  arr[off+1] = (val>>8) & 0xFF;
+  arr[off+2] = (val>>16) & 0xFF;
+  arr[off+3] = (val>>24) & 0xFF;
+}
+function setU16(arr, off, val) {
+  arr[off]   = val & 0xFF;
+  arr[off+1] = (val>>8) & 0xFF;
+}
+function readStr(arr, off, len=16) {
+  let s = '';
+  for (let i=0; i<len; i++) {
+    if (arr[off+i] === 0) break;
+    s += String.fromCharCode(arr[off+i]);
+  }
+  return s;
+}
+function writeStr(arr, off, str, len=16) {
+  for (let i=0; i<len; i++) {
+    arr[off+i] = i < str.length ? str.charCodeAt(i) : 0;
+  }
+}
+
+// ── File parsing ──────────────────────────────────────────
+function parseARD(buf) {
+  workData = new Uint8Array(buf.slice(0));
+  const a = workData;
+
+  const numSec = u32(a, 0);
+  sections = [];
+  for (let i=0; i<numSec; i++) sections.push(u32(a, 8 + i*4));
+
+  // Section 3 = filenames (32-byte entries)
+  filenames = [];
+  if (numSec >= 4) {
+    const s3 = sections[3];
+    // Find end of section 3
+    let s3end = a.length;
+    for (let i=4; i<numSec; i++) {
+      if (sections[i] !== 0 && sections[i] !== s3) { s3end = sections[i]; break; }
+    }
+    let pos = s3;
+    while (pos + 32 <= s3end) {
+      const name = readStr(a, pos, 32);
+      filenames.push(name || '');
+      pos += 32;
+    }
+  }
+
+  // Parse flag sections (sec 5+)
+  flagSections = [];
+  for (let si=5; si<numSec; si++) {
+    const ss = sections[si];
+    if (!ss || ss === 0 || ss+4 > a.length) continue;
+    const nnSub = u32(a, ss);
+    if (nnSub < 1 || nnSub > 10) continue;
+    const sub0rel = u32(a, ss+4);
+    const sub0abs = ss + sub0rel;
+    if (sub0abs + 4 > a.length) continue;
+    const nnEnt = u32(a, sub0abs);
+    if (nnEnt === 0 || nnEnt > 2000) continue;
+
+    const entities = [];
+    for (let ei=0; ei<nnEnt; ei++) {
+      const entOff = sub0abs + 4 + ei * ENTRY_SIZE;
+      if (entOff + ENTRY_SIZE > a.length) break;
+      entities.push(readEntity(entOff));
+    }
+    flagSections.push({ secIdx: si, secStart: ss, sub0abs, entities });
+  }
+
+  modifications.clear();
+  updateDiffBadge();
+}
+
+function readEntity(off) {
+  const a = workData;
+  return {
+    off,
+    flags:  u16(a, off + OFF.flags),
+    v1:     u16(a, off + OFF.v1),
+    push_cond: u32(a, off + OFF.push_cond),
+    Z:      f32(a, off + OFF.Z),
+    X:      f32(a, off + OFF.X),
+    Y:      f32(a, off + OFF.Y),
+    scaleX: f32(a, off + OFF.scaleX),
+    scaleY: f32(a, off + OFF.scaleY),
+    scaleZ: f32(a, off + OFF.scaleZ),
+    rotX:   f32(a, off + OFF.rotX),
+    rotY:   f32(a, off + OFF.rotY),
+    rotZ:   f32(a, off + OFF.rotZ),
+    ME:     u32(a, off + OFF.ME),
+    MV:     u32(a, off + OFF.MV),
+    RI:     u32(a, off + OFF.RI),
+    name:   readStr(a, off + OFF.name, 16),
+  };
+}
+
+// ── Tab switching ─────────────────────────────────────────
+function switchTab(tab) {
+  const isSec = tab === 'sections';
+  document.getElementById('paneSections').style.display = isSec ? 'flex' : 'none';
+  document.getElementById('paneFiles').style.display    = isSec ? 'none' : 'flex';
+  document.getElementById('tabSections').style.background    = isSec ? 'rgba(0,212,255,0.15)' : 'transparent';
+  document.getElementById('tabSections').style.borderBottomColor = isSec ? 'var(--accent)' : 'transparent';
+  document.getElementById('tabSections').style.color    = isSec ? 'var(--accent)' : 'var(--muted)';
+  document.getElementById('tabFiles').style.background  = isSec ? 'transparent' : 'rgba(0,212,255,0.15)';
+  document.getElementById('tabFiles').style.borderBottomColor = isSec ? 'transparent' : 'var(--accent)';
+  document.getElementById('tabFiles').style.color       = isSec ? 'var(--muted)' : 'var(--accent)';
+}
+
+// ── Filename list ─────────────────────────────────────────
+function buildFilenameList() {
+  const list = document.getElementById('filenameList');
+  list.innerHTML = '';
+
+  // Build lookup: fileIdx -> [{name, via:'MDLS'|'MSET'}]
+  const refs = {};
+  flagSections.forEach(fs => {
+    fs.entities.forEach(e => {
+      if (e.ME !== undefined) {
+        if (!refs[e.ME]) refs[e.ME] = [];
+        if (!refs[e.ME].find(r => r.name === e.name && r.via === 'MDLS'))
+          refs[e.ME].push({ name: e.name, via: 'MDLS' });
+      }
+      if (e.MV !== undefined) {
+        if (!refs[e.MV]) refs[e.MV] = [];
+        if (!refs[e.MV].find(r => r.name === e.name && r.via === 'MSET'))
+          refs[e.MV].push({ name: e.name, via: 'MSET' });
+      }
+    });
+  });
+
+  filenames.forEach((name, i) => {
+    const ext   = name.split('.').pop().toLowerCase();
+    const isMdl = ext === 'mdls' || ext === 'moa';
+    const isMst = ext === 'mset' || ext === 'mfa';
+    const color = isMdl ? 'var(--yellow)' : isMst ? 'var(--green)' : 'var(--text)';
+
+    // Collect unique entity names referencing this index
+    const entRefs = refs[i] || [];
+    const names = [...new Set(entRefs.map(r => r.name))];
+    const tags = names.map(n => `<span style="font-size:9px;color:var(--accent);background:rgba(0,212,255,0.07);border:1px solid rgba(0,212,255,0.4);padding:1px 5px;white-space:nowrap">${n}</span>`).join('');
+
+    const d = document.createElement('div');
+    d.style.cssText = 'padding:4px 10px;border-bottom:1px solid rgba(28,35,51,0.5);font-size:11px;cursor:default';
+    d.innerHTML = `
+      <div style="display:flex;gap:6px;align-items:baseline">
+        <span style="color:var(--muted);min-width:28px;font-size:10px;flex-shrink:0">${i}</span>
+        <span style="color:${color};word-break:break-all;flex:1">${name || '<empty>'}</span>
+        <button onclick="removeFilename(${i})" title="Remove entry ${i}" style="background:transparent;border:1px solid var(--red);color:var(--red);font-family:'Share Tech Mono',monospace;font-size:9px;padding:1px 6px;cursor:pointer;flex-shrink:0;opacity:0.7" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.7'">✕</button>
+      </div>
+      ${tags ? `<div style="margin-top:3px;margin-left:34px;display:flex;flex-wrap:wrap;gap:3px">${tags}</div>` : ''}`;
+    d.title = `Index ${i}${names.length ? ' · ' + names.join(', ') : ''}`;
+    list.appendChild(d);
+  });
+}
+
+let _extWarnTimer = null;
+function clearExtWarn() {
+  const w = document.getElementById('extWarn');
+  if (w) { w.style.display = 'none'; w.style.opacity = '1'; }
+  if (_extWarnTimer) { clearTimeout(_extWarnTimer); _extWarnTimer = null; }
+}
+
+function addFilename() {
+  const input = document.getElementById('newFilename');
+  const name  = input.value.trim();
+  if (!name) return;
+  if (name.length > 31) { setStatus('Filename too long (max 31 chars)', 'err'); return; }
+
+  // Warn and block if no known extension
+  const ext = name.split('.').pop().toLowerCase();
+  const knownExts = ['mdls','moa','mset','mfa'];
+  if (!name.includes('.') || !knownExts.includes(ext)) {
+    const w = document.getElementById('extWarn');
+    w.style.display = 'block';
+    w.style.opacity = '1';
+    w.style.transition = '';
+    if (_extWarnTimer) clearTimeout(_extWarnTimer);
+    _extWarnTimer = setTimeout(() => {
+      w.style.transition = 'opacity 2s';
+      w.style.opacity = '0';
+      setTimeout(() => { w.style.display = 'none'; w.style.transition = ''; }, 2000);
+    }, 2000);
+    return; // don't add
+  }
+
+  // Section 3 offset and current end
+  const s3start = sections[3];
+  // Find section 3 end same way as parseARD
+  const numSec = u32(workData, 0);
+  let s3end = workData.length;
+  for (let i = 4; i < numSec; i++) {
+    const off = u32(workData, 8 + i*4);
+    if (off !== 0 && off !== s3start) { s3end = off; break; }
+  }
+
+  // New entry goes right at s3end — but we need to grow the buffer
+  // We'll grow workData by 32 bytes and shift everything after s3end up
+  const insertAt = s3end;
+  const newSize   = workData.length + 32;
+  const newBuf    = new Uint8Array(newSize);
+
+  // Copy everything before insertAt
+  newBuf.set(workData.slice(0, insertAt), 0);
+  // Write the new 32-byte filename entry (zero-padded)
+  for (let i = 0; i < 32; i++) newBuf[insertAt + i] = i < name.length ? name.charCodeAt(i) : 0;
+  // Copy everything after insertAt, shifted by 32
+  newBuf.set(workData.slice(insertAt), insertAt + 32);
+
+  // Update all section offsets in the header that point at or after insertAt
+  // Section offsets are at bytes 8 + i*4
+  for (let i = 0; i < numSec; i++) {
+    const offVal = u32(newBuf, 8 + i*4);
+    if (offVal >= insertAt && offVal !== 0) {
+      setU32(newBuf, 8 + i*4, offVal + 32);
+    }
+  }
+
+  // Re-point flagSection sub0abs values (they're in-memory, re-parse)
+  workData = newBuf;
+  filenames.push(name);
+
+  // Re-parse flag sections with updated offsets
+  sections = [];
+  for (let i = 0; i < numSec; i++) sections.push(u32(workData, 8 + i*4));
+  flagSections.forEach(fs => {
+    // Update sub0abs based on new section offsets
+    const ss = sections[fs.secIdx];
+    fs.secStart = ss;
+    const sub0rel = u32(workData, ss + 4);
+    fs.sub0abs = ss + sub0rel;
+    fs.entities = fs.entities.map((e, ei) => readEntity(fs.sub0abs + 4 + ei * ENTRY_SIZE));
+  });
+
+  buildFilenameList();
+  input.value = '';
+  setStatus(`Added filename [${filenames.length - 1}]: ${name}`, 'ok');
+
+  // Mark file as modified so export is enabled
+  modifications.set('filenames', true);
+  updateDiffBadge();
+}
+
+function removeFilename(idx) {
+  const name = filenames[idx];
+
+  // Warn if any entity references this index
+  const users = [];
+  flagSections.forEach(fs => fs.entities.forEach(e => {
+    if (e.ME === idx || e.MV === idx) users.push(e.name);
+  }));
+  if (users.length) {
+    const unique = [...new Set(users)].join(', ');
+    if (!confirm(`Entry ${idx} (${name}) is still referenced by: ${unique}\n\nRemove anyway? Those entities will have their index decremented.`)) return;
+  }
+
+  // Remove 32 bytes at the entry's file offset
+  const s3start  = sections[3];
+  const removeAt = s3start + idx * 32;
+  const newBuf   = new Uint8Array(workData.length - 32);
+  newBuf.set(workData.slice(0, removeAt), 0);
+  newBuf.set(workData.slice(removeAt + 32), removeAt);
+
+  // Update section offsets in header that point after removeAt
+  const numSec = u32(newBuf, 0);
+  for (let i = 0; i < numSec; i++) {
+    const offVal = u32(newBuf, 8 + i*4);
+    if (offVal > removeAt && offVal !== 0) setU32(newBuf, 8 + i*4, offVal - 32);
+  }
+
+  workData = newBuf;
+  filenames.splice(idx, 1);
+
+  // Re-parse section offsets
+  sections = [];
+  for (let i = 0; i < numSec; i++) sections.push(u32(workData, 8 + i*4));
+
+  // Fix entity ME/MV indices: anything pointing at idx becomes 0, anything above idx decrements
+  flagSections.forEach((fs, fsi) => {
+    const ss      = sections[fs.secIdx];
+    fs.secStart   = ss;
+    const sub0rel = u32(workData, ss + 4);
+    fs.sub0abs    = ss + sub0rel;
+    fs.entities   = fs.entities.map((e, ei) => {
+      const off = fs.sub0abs + 4 + ei * ENTRY_SIZE;
+      let me = u32(workData, off + OFF.ME);
+      let mv = u32(workData, off + OFF.MV);
+      if (me === idx) me = 0;
+      else if (me > idx) me--;
+      if (mv === idx) mv = 0;
+      else if (mv > idx) mv--;
+      setU32(workData, off + OFF.ME, me);
+      setU32(workData, off + OFF.MV, mv);
+      return readEntity(off);
+    });
+  });
+
+  modifications.set('filenames', true);
+  updateDiffBadge();
+  buildFilenameList();
+  renderTable();
+  setStatus(`Removed filename [${idx}]: ${name}`, 'warn');
+}
+
+// ── UI: Section list ──────────────────────────────────────
+function buildSectionList() {
+  const list = document.getElementById('sectionList');
+  list.innerHTML = '';
+  flagSections.forEach((fs, i) => {
+    const d = document.createElement('div');
+    d.className = 'section-item' + (i===0 ? ' active':'');
+    d.innerHTML = `
+      <span class="sec-num">§${fs.secIdx}</span>
+      <span>SECTION ${fs.secIdx}</span>
+      <span class="sec-count">${fs.entities.length}</span>`;
+    d.onclick = () => selectSection(i, d);
+    list.appendChild(d);
+  });
+  if (flagSections.length) selectSection(0, list.children[0]);
+  buildFilenameList();
+}
+
+function selectSection(idx, el) {
+  activeSec = idx;
+  document.querySelectorAll('.section-item').forEach(e => e.classList.remove('active'));
+  el.classList.add('active');
+  filterStr = document.getElementById('searchInput').value;
+  renderTable();
+  hideEditPanel();
+}
+
+// ── UI: Table ─────────────────────────────────────────────
+function renderTable() {
+  if (activeSec === null) return;
+  const fs = flagSections[activeSec];
+  const tbody = document.getElementById('entityBody');
+  tbody.innerHTML = '';
+
+  let ents = fs.entities.map((e,i) => ({...e, idx:i}));
+
+  // Filter
+  if (filterStr) {
+    const f = filterStr.toLowerCase();
+    ents = ents.filter(e => e.name.toLowerCase().includes(f));
+  }
+
+  // Sort
+  ents.sort((a,b) => {
+    let av = a[sortCol], bv = b[sortCol];
+    if (typeof av === 'string') av=av.toLowerCase(), bv=bv.toLowerCase();
+    return sortAsc ? (av>bv?1:av<bv?-1:0) : (av<bv?1:av>bv?-1:0);
+  });
+
+  document.getElementById('countBadge').textContent = `${ents.length} entities`;
+
+  const modKey = e => `${activeSec}:${e.idx}`;
+
+  ents.forEach(e => {
+    const isMod = modifications.has(modKey(e));
+    const isSel = selectedEnt && selectedEnt.secFlagIdx===activeSec && selectedEnt.entIdx===e.idx;
+    const tr = document.createElement('tr');
+    if (isMod) tr.classList.add('modified');
+    if (isSel) tr.classList.add('selected');
+
+    tr.innerHTML = `
+      <td>${e.idx}</td>
+      <td class="name-col">${e.name}</td>
+      <td class="num-col">${e.Z.toFixed(2)}</td>
+      <td class="num-col">${e.X.toFixed(2)}</td>
+      <td class="num-col">${e.Y.toFixed(2)}</td>
+      <td class="num-col">${e.scaleX.toFixed(3)}</td>
+      <td class="num-col">${e.scaleY.toFixed(3)}</td>
+      <td class="num-col">${e.scaleZ.toFixed(3)}</td>
+      <td class="num-col">${e.rotX.toFixed(3)}</td>
+      <td class="num-col">${e.rotY.toFixed(3)}</td>
+      <td class="num-col">${e.rotZ.toFixed(3)}</td>
+      <td class="num-col">${e.v1}</td>
+      <td class="id-col" title="${filenames[e.ME]||''}">${e.ME}</td>
+      <td class="id-col" title="${filenames[e.MV]||''}">${e.MV}</td>
+      <td class="mod-badge">${isMod?'●':''}</td>`;
+    tr.onclick = () => selectEntity(e.idx, tr);
+    tbody.appendChild(tr);
+  });
+}
+
+function filterTable() {
+  filterStr = document.getElementById('searchInput').value;
+  renderTable();
+}
+
+function sortBy(col) {
+  if (sortCol === col) sortAsc = !sortAsc;
+  else { sortCol = col; sortAsc = true; }
+  renderTable();
+}
+
+// ── UI: Entity selection ──────────────────────────────────
+function selectEntity(entIdx, tr) {
+  selectedEnt = { secFlagIdx: activeSec, entIdx };
+  document.querySelectorAll('#entityBody tr').forEach(r => r.classList.remove('selected'));
+  tr.classList.add('selected');
+  showEditPanel(entIdx);
+  document.getElementById('revertBtn').disabled = false;
+  document.getElementById('cloneBtn').disabled = false;
+  document.getElementById('deleteBtn').disabled = false;
+  // Populate and show the clone target dropdown
+  const sel = document.getElementById('cloneTarget');
+  sel.innerHTML = '';
+  flagSections.forEach((fs, i) => {
+    const opt = document.createElement('option');
+    opt.value = i;
+    opt.textContent = `→ §${fs.secIdx} (${fs.entities.length} ents)`;
+    if (i === activeSec) opt.textContent = `→ §${fs.secIdx} (this)`;
+    sel.appendChild(opt);
+  });
+  sel.value = activeSec;
+  sel.style.display = '';
+  sel.disabled = false;
+}
+
+function hideEditPanel() {
+  document.getElementById('editPanel').classList.remove('visible');
+  selectedEnt = null;
+  document.getElementById('revertBtn').disabled = true;
+  document.getElementById('applyBtn').disabled = true;
+  document.getElementById('cloneBtn').disabled = true;
+  document.getElementById('cloneTarget').style.display = 'none';
+  document.getElementById('cloneTarget').disabled = true;
+  document.getElementById('deleteBtn').disabled = true;
+}
+
+function showEditPanel(entIdx) {
+  const e = flagSections[activeSec].entities[entIdx];
+  const panel = document.getElementById('editPanel');
+  panel.classList.add('visible');
+
+  document.getElementById('editZ').value  = e.Z.toFixed(4);
+  document.getElementById('editX').value  = e.X.toFixed(4);
+  document.getElementById('editY').value  = e.Y.toFixed(4);
+  document.getElementById('editSX').value = e.scaleX.toFixed(4);
+  document.getElementById('editSY').value = e.scaleY.toFixed(4);
+  document.getElementById('editSZ').value = e.scaleZ.toFixed(4);
+  document.getElementById('editRX').value = e.rotX.toFixed(4);
+  document.getElementById('editRY').value = e.rotY.toFixed(4);
+  document.getElementById('editRZ').value = e.rotZ.toFixed(4);
+  document.getElementById('editName').value  = e.name;
+  document.getElementById('editV1').value    = e.v1;
+  document.getElementById('editFlags').value = '0x' + e.flags.toString(16).toUpperCase().padStart(4,'0');
+  document.getElementById('editPushCond').value = '0x' + e.push_cond.toString(16).toUpperCase().padStart(8,'0');
+  document.getElementById('editME').value = e.ME;
+  document.getElementById('editMV').value = e.MV;
+  document.getElementById('editRI').value = e.RI;
+
+  document.getElementById('meName').textContent = filenames[e.ME] || '(unknown)';
+  document.getElementById('mvName').textContent = filenames[e.MV] || '(unknown)';
+
+  updateEvdlPreview();
+
+  // Clear changed styling
+  panel.querySelectorAll('.field-input').forEach(i => i.classList.remove('changed'));
+  document.getElementById('applyBtn').disabled = true;
+
+  buildHexView(e);
+  setStatus(`Selected entity: ${e.name} (idx ${entIdx}, file off 0x${e.off.toString(16).toUpperCase()})`, 'ok');
+}
+
+function buildHexView(e) {
+  const a = workData;
+  const off = e.off;
+  const div = document.getElementById('hexView');
+  div.innerHTML = '';
+
+  const labels = {
+    0x00:'flags (lo) + v1 (hi) ← EVDL', 0x04:'push_cond — condition ID for opcode 0x15', 0x08:'unk', 0x0C:'unk',
+    0x10:'unk', 0x14:'unk', 0x18:'unk',
+    0x1C:'Z  ← spawn pos', 0x20:'X  ← spawn pos', 0x24:'Y  ← spawn pos',
+    0x28:'unk', 0x2C:'scaleX', 0x30:'scaleY', 0x34:'scaleZ',
+    0x38:'rotX', 0x3C:'rotY', 0x40:'rotZ',
+    0x44:'unk', 0x48:'RI (reward index)', 0x4C:'unk',
+    0x50:'unk', 0x54:'unk', 0x58:'unk', 0x5C:'unk',
+    0x60:'MDLS index', 0x64:'MSET index',
+  };
+  const colorClass = {
+    0x00:'x-coord',  // highlight EVDL field in orange
+    0x1C:'z-coord', 0x20:'x-coord', 0x24:'y-coord',
+    0x2C:'scale', 0x30:'scale', 0x34:'scale',
+    0x38:'rot', 0x3C:'rot', 0x40:'rot'
+  };
+
+  for (let i=0; i<ENTRY_SIZE; i+=4) {
+    const raw = u32(a, off+i).toString(16).padStart(8,'0').toUpperCase();
+    const fv = f32(a, off+i).toFixed(2);
+    const lbl = labels[i] || '';
+    const cc = colorClass[i] || '';
+    const row = document.createElement('div');
+    row.className = 'hex-row';
+    row.innerHTML = `
+      <span class="hex-off">+${i.toString(16).padStart(2,'0')}</span>
+      <span class="hex-val ${cc}">${raw}</span>
+      <span style="color:var(--muted);font-size:10px">${fv.padStart(10)} ${lbl}</span>`;
+    div.appendChild(row);
+  }
+}
+
+function toggleTheme() {
+  const light = document.body.classList.toggle('light');
+  document.getElementById('themeBtn').textContent = light ? '☾ DARK' : '☀ LIGHT';
+  localStorage.setItem('ardTheme', light ? 'light' : 'dark');
+}
+// Restore saved theme
+if (localStorage.getItem('ardTheme') === 'light') {
+  document.body.classList.add('light');
+  document.getElementById('themeBtn').textContent = '☾ DARK';
+}
+
+function closeFile() {
+  if (modifications.size > 0) {
+    if (!confirm('You have unsaved changes. Close anyway?')) return;
+  }
+  fileData = null; workData = null; fileName = '';
+  sections = []; filenames = []; flagSections = [];
+  activeSec = null; selectedEnt = null;
+  modifications.clear();
+  document.getElementById('mainLayout').style.display = 'none';
+  document.getElementById('dropZone').style.display = '';
+  document.getElementById('fileName').textContent = 'No file loaded';
+  document.getElementById('closeBtn').style.display = 'none';
+  document.getElementById('compareBtn').style.display = 'none';
+  document.getElementById('exportBtn').disabled = true;
+  document.getElementById('diffCount').style.display = 'none';
+  document.getElementById('fileInput').value = '';
+  sessionStorage.removeItem('ardState');
+}
+
+function toggleLegend() {
+  const p = document.getElementById('legendPanel');
+  p.style.display = p.style.display === 'none' ? 'block' : 'none';
+}
+
+function markChanged(input) {
+  input.classList.add('changed');
+  document.getElementById('applyBtn').disabled = false;
+}
+
+// ── EVDL preview helpers ──────────────────────────────────
+const V1_GROUPS = { 3:'players', 4:'props', 9:'boxes' };
+
+function updateEvdlPreview() {
+  const slotStr = (document.getElementById('editFlags').value || '0').replace(/^0x/i,'');
+  const slot    = parseInt(slotStr, 16) || 0;
+  const group   = parseInt(document.getElementById('editV1').value) || 0;
+  const pushVal = (group * 0x10000 + slot) >>> 0;
+  const hex     = '0x' + pushVal.toString(16).toUpperCase().padStart(8,'0');
+
+  document.getElementById('evdlPushValue').textContent   = hex;
+  document.getElementById('evdlExampleCall').textContent = `Display_model(${hex})`;
+  document.getElementById('dword_hiword').textContent    = group.toString(16).toUpperCase().padStart(4,'0');
+  document.getElementById('dword_loword').textContent    = slot.toString(16).toUpperCase().padStart(4,'0');
+  document.getElementById('v1GroupName').textContent     = V1_GROUPS[group] ? `(${V1_GROUPS[group]})` : '';
+}
+
+function syncV1Display() { updateEvdlPreview(); }
+
+// ── Apply changes ─────────────────────────────────────────
+function applyEdit() {
+  if (!selectedEnt) return;
+  const {secFlagIdx, entIdx} = selectedEnt;
+  const fs = flagSections[secFlagIdx];
+  const e  = fs.entities[entIdx];
+  const a  = workData;
+
+  const newZ  = parseFloat(document.getElementById('editZ').value);
+  const newX  = parseFloat(document.getElementById('editX').value);
+  const newY  = parseFloat(document.getElementById('editY').value);
+  const newSX = parseFloat(document.getElementById('editSX').value);
+  const newSY = parseFloat(document.getElementById('editSY').value);
+  const newSZ = parseFloat(document.getElementById('editSZ').value);
+  const newRX = parseFloat(document.getElementById('editRX').value);
+  const newRY = parseFloat(document.getElementById('editRY').value);
+  const newRZ = parseFloat(document.getElementById('editRZ').value);
+  const newName = document.getElementById('editName').value.substring(0,15);
+  const newV1  = parseInt(document.getElementById('editV1').value) || e.v1;
+  const flagStr = document.getElementById('editFlags').value.replace(/^0x/i,'');
+  const newFlags = parseInt(flagStr, 16);
+  const cmdStr = document.getElementById('editPushCond').value.replace(/^0x/i,'');
+  const newPushCond = parseInt(cmdStr, 16) || e.push_cond;
+  const newME  = parseInt(document.getElementById('editME').value);
+  const newMV  = parseInt(document.getElementById('editMV').value);
+  const newRI  = parseInt(document.getElementById('editRI').value) || 0;
+
+  const syncSections = document.getElementById('syncSections').checked;
+  const entryName = e.name; // used for sync
+
+  // Determine which flagSections to patch
+  const targets = syncSections
+    ? flagSections.map((_, i) => i)
+    : [secFlagIdx];
+
+  targets.forEach(tsi => {
+    const tfs = flagSections[tsi];
+    tfs.entities.forEach((te, tei) => {
+      // Match by name if syncing, exact idx if not
+      const match = syncSections
+        ? (te.name === entryName)
+        : (tsi === secFlagIdx && tei === entIdx);
+      if (!match) return;
+
+      // Always recompute offset from sub0abs to avoid stale cached values
+      const off = tfs.sub0abs + 4 + tei * ENTRY_SIZE;
+      if (off + ENTRY_SIZE > workData.length) return; // bounds check
+
+      setU16(a, off + OFF.flags, isNaN(newFlags) ? te.flags : newFlags);
+      setF32(a, off + OFF.Z, newZ);
+      setF32(a, off + OFF.X, newX);
+      setF32(a, off + OFF.Y, newY);
+      setF32(a, off + OFF.scaleX, newSX);
+      setF32(a, off + OFF.scaleY, newSY);
+      setF32(a, off + OFF.scaleZ, newSZ);
+      setF32(a, off + OFF.rotX, newRX);
+      setF32(a, off + OFF.rotY, newRY);
+      setF32(a, off + OFF.rotZ, newRZ);
+      setU16(a, off + OFF.v1, newV1);
+      setU32(a, off + OFF.push_cond, newPushCond);
+      setU32(a, off + OFF.ME, newME);
+      setU32(a, off + OFF.MV, newMV);
+      setU32(a, off + OFF.RI, newRI);
+      writeStr(a, off + OFF.name, newName);
+
+      // Refresh entity obj with live offset
+      te.off = off;
+      Object.assign(te, readEntity(off));
+
+      const key = `${tsi}:${tei}`;
+      modifications.set(key, true);
+    });
+  });
+
+  // Clear changed styling
+  document.getElementById('editPanel').querySelectorAll('.field-input')
+    .forEach(i => i.classList.remove('changed'));
+  document.getElementById('applyBtn').disabled = true;
+
+  document.getElementById('meName').textContent = filenames[newME] || '(unknown)';
+  document.getElementById('mvName').textContent = filenames[newMV] || '(unknown)';
+
+  updateDiffBadge();
+  renderTable();
+  buildHexView(readEntity(e.off));
+
+  const syncMsg = syncSections ? ` (synced across ${targets.length} sections)` : '';
+  setStatus(`Applied: ${newName}${syncMsg}`, 'ok');
+}
+
+function revertSelected() {
+  if (!selectedEnt) return;
+  const {secFlagIdx, entIdx} = selectedEnt;
+  const key = `${secFlagIdx}:${entIdx}`;
+
+  // Restore from original file data — use live offset from sub0abs
+  const origArr = new Uint8Array(fileData);
+  const fs = flagSections[secFlagIdx];
+  const e  = fs.entities[entIdx];
+  const srcOff = fs.sub0abs + 4 + entIdx * ENTRY_SIZE;
+  workData.set(origArr.slice(srcOff, srcOff + ENTRY_SIZE), srcOff);
+  e.off = srcOff;
+  Object.assign(e, readEntity(srcOff));
+  modifications.delete(key);
+
+  updateDiffBadge();
+  renderTable();
+  showEditPanel(entIdx);
+  setStatus(`Reverted: ${e.name}`, 'warn');
+}
+
+function revertAll() {
+  // Restore full original buffer and re-parse completely from scratch
+  workData = new Uint8Array(fileData.slice(0));
+  parseARD(fileData);  // rebuilds sections, flagSections, filenames from original
+  modifications.clear();
+  updateDiffBadge();
+  buildSectionList();  // rebuilds section list and re-selects section 0
+  hideEditPanel();
+  setStatus('All changes reverted', 'warn');
+}
+
+// ── Delete Entity ─────────────────────────────────────────
+function deleteSelected() {
+  if (!selectedEnt) return;
+  const { secFlagIdx, entIdx } = selectedEnt;
+  const fs  = flagSections[secFlagIdx];
+  const e   = fs.entities[entIdx];
+
+  if (!confirm(`Delete entity "${e.name}" (idx ${entIdx}) from §${fs.secIdx}?\nThis cannot be undone except by REVERT ALL.`)) return;
+
+  // Calculate the byte range to remove
+  const removeAt = fs.sub0abs + 4 + entIdx * ENTRY_SIZE;
+
+  // Shrink buffer by ENTRY_SIZE, closing the gap
+  const newBuf = new Uint8Array(workData.length - ENTRY_SIZE);
+  newBuf.set(workData.slice(0, removeAt), 0);
+  newBuf.set(workData.slice(removeAt + ENTRY_SIZE), removeAt);
+
+  // Update all section header offsets that pointed after removeAt
+  const numSec = u32(newBuf, 0);
+  for (let i = 0; i < numSec; i++) {
+    const offVal = u32(newBuf, 8 + i*4);
+    if (offVal > removeAt && offVal !== 0) {
+      const fixed = (offVal - ENTRY_SIZE) >>> 0;
+      newBuf[8+i*4]=fixed&0xFF; newBuf[9+i*4]=(fixed>>8)&0xFF;
+      newBuf[10+i*4]=(fixed>>16)&0xFF; newBuf[11+i*4]=(fixed>>24)&0xFF;
+    }
+  }
+
+  workData = newBuf;
+  sections = [];
+  for (let i = 0; i < numSec; i++) sections.push(u32(workData, 8 + i*4));
+
+  // Re-parse all flag sections and update entity counts
+  flagSections.forEach(fss => {
+    const ss      = sections[fss.secIdx];
+    fss.secStart  = ss;
+    const sub0rel = u32(workData, ss + 4);
+    fss.sub0abs   = ss + sub0rel;
+    // For the affected section, count is one less; others read from buffer
+    const count = fss === fs
+      ? fs.entities.length - 1
+      : u32(workData, fss.sub0abs);
+    setU32(workData, fss.sub0abs, count);
+    fss.entities = [];
+    for (let ei = 0; ei < count; ei++) {
+      const off = fss.sub0abs + 4 + ei * ENTRY_SIZE;
+      if (off + ENTRY_SIZE <= workData.length) fss.entities.push(readEntity(off));
+    }
+  });
+
+  // Fix up modifications map — remove deleted key, shift indices above it down
+  const newMods = new Map();
+  for (const [key, val] of modifications) {
+    const [si, ei] = key.split(':').map(Number);
+    if (si === secFlagIdx && ei === entIdx) continue;  // deleted entry
+    if (si === secFlagIdx && ei > entIdx) newMods.set(`${si}:${ei-1}`, val);
+    else newMods.set(key, val);
+  }
+  // Mark the section as changed
+  newMods.set(`${secFlagIdx}:deleted`, true);
+  modifications.clear();
+  for (const [k,v] of newMods) modifications.set(k,v);
+
+  updateDiffBadge();
+  hideEditPanel();
+  renderTable();
+
+  // Update section list entity counts
+  document.querySelectorAll('.section-item').forEach((el, i) => {
+    const cnt = el.querySelector('.sec-count');
+    if (cnt && flagSections[i]) cnt.textContent = flagSections[i].entities.length;
+  });
+
+  setStatus(`Deleted: ${e.name} from §${fs.secIdx}`, 'warn');
+}
+
+// ── Clone / Add Entity ────────────────────────────────────
+function cloneSelected(targetSecIdx) {
+  if (!selectedEnt) return;
+  if (targetSecIdx == null) targetSecIdx = activeSec;
+  const { secFlagIdx, entIdx } = selectedEnt;
+  const srcFs = flagSections[secFlagIdx];
+  const tgtFs = flagSections[targetSecIdx];
+  const src   = srcFs.entities[entIdx];
+  const crossSection = targetSecIdx !== secFlagIdx;
+
+  // Find next available slot index in the TARGET section
+  const usedSlots = new Set(tgtFs.entities.map(e => e.flags));
+  let nextSlot = 0;
+  while (usedSlots.has(nextSlot)) nextSlot++;
+
+  // Insert point = right after last entity in TARGET subsection
+  const newEntIdx = tgtFs.entities.length;
+  const insertAt  = tgtFs.sub0abs + 4 + newEntIdx * ENTRY_SIZE;
+
+  // Grow the buffer by one ENTRY_SIZE, shifting everything after insertAt up
+  const newBuf = new Uint8Array(workData.length + ENTRY_SIZE);
+  newBuf.set(workData.slice(0, insertAt), 0);
+  newBuf.set(workData.slice(insertAt), insertAt + ENTRY_SIZE);
+
+  // Copy source entity bytes into the new slot
+  // src.off may have shifted if insertAt is before it
+  const srcOff = src.off >= insertAt ? src.off + ENTRY_SIZE : src.off;
+  newBuf.set(newBuf.slice(srcOff, srcOff + ENTRY_SIZE), insertAt);
+
+  // Patch the new entry
+  setU32(newBuf, insertAt + OFF.unk0C, 0);
+  setU16(newBuf, insertAt + OFF.flags, nextSlot);
+  const newName = (src.name + '_cp').substring(0, 15);
+  writeStr(newBuf, insertAt + OFF.name, newName);
+
+  // Update all section header offsets that point at or after insertAt
+  const numSec = u32(newBuf, 0);
+  for (let i = 0; i < numSec; i++) {
+    const offVal = u32(newBuf, 8 + i*4);
+    if (offVal >= insertAt && offVal !== 0) setU32(newBuf, 8 + i*4, offVal + ENTRY_SIZE);
+  }
+
+  workData = newBuf;
+
+  sections = [];
+  for (let i = 0; i < numSec; i++) sections.push(u32(workData, 8 + i*4));
+
+  // Re-parse all flag sections with updated offsets
+  flagSections.forEach(fss => {
+    const ss      = sections[fss.secIdx];
+    fss.secStart  = ss;
+    const sub0rel = u32(workData, ss + 4);
+    fss.sub0abs   = ss + sub0rel;
+    const count   = fss === tgtFs ? newEntIdx + 1 : u32(workData, fss.sub0abs);
+    setU32(workData, fss.sub0abs, count);
+    fss.entities  = [];
+    for (let ei = 0; ei < count; ei++) {
+      const off = fss.sub0abs + 4 + ei * ENTRY_SIZE;
+      if (off + ENTRY_SIZE <= workData.length) fss.entities.push(readEntity(off));
+    }
+  });
+
+  modifications.set(`${targetSecIdx}:${newEntIdx}`, true);
+  updateDiffBadge();
+
+  // Switch to target section and select the new entity
+  if (crossSection) {
+    const secList = document.querySelectorAll('.section-item');
+    selectSection(targetSecIdx, secList[targetSecIdx]);
+  }
+  renderTable();
+
+  const tbody = document.getElementById('entityBody');
+  for (const row of tbody.querySelectorAll('tr')) {
+    if (row.cells[0] && parseInt(row.cells[0].textContent) === newEntIdx) {
+      selectEntity(newEntIdx, row);
+      row.scrollIntoView({ block: 'nearest' });
+      break;
+    }
+  }
+
+  const dest = crossSection ? ` → §${tgtFs.secIdx}` : '';
+  setStatus(`Cloned: ${src.name} → ${newName}${dest}  (slot 0x${nextSlot.toString(16).toUpperCase().padStart(4,'0')})`, 'ok');
+}
+
+function updateDiffBadge() {
+  const n = modifications.size;
+  const badge = document.getElementById('diffCount');
+  const revertAll = document.getElementById('revertAllBtn');
+  const exportBtn = document.getElementById('exportBtn');
+  if (n > 0) {
+    badge.style.display = '';
+    badge.textContent = `${n} change${n>1?'s':''}`;
+    revertAll.style.display = '';
+    exportBtn.disabled = false;
+  } else {
+    badge.style.display = 'none';
+    revertAll.style.display = 'none';
+  }
+}
+
+// ── Export ────────────────────────────────────────────────
+function exportFile() {
+  const blob = new Blob([workData], {type: 'application/octet-stream'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  const baseName = fileName.replace(/\.ard$/i,'');
+  a.href     = url;
+  a.download = `${baseName}_patched.ard`;
+  a.click();
+  URL.revokeObjectURL(url);
+  setStatus(`Saved: ${a.download}  (${modifications.size} modifications)`, 'ok');
+}
+
+// ── Status ────────────────────────────────────────────────
+function setStatus(msg, type='ok') {
+  const el = document.getElementById('statusText');
+  el.textContent = msg;
+  el.className = 'status-' + type;
+}
+
+// ── File I/O ──────────────────────────────────────────────
+function loadFile(file) {
+  fileName = file.name;
+  document.getElementById('fileName').textContent = file.name;
+  const reader = new FileReader();
+  reader.onload = e => {
+    fileData = e.target.result;
+    try {
+      parseARD(fileData);
+      document.getElementById('dropZone').style.display = 'none';
+      document.getElementById('mainLayout').style.display = 'grid'; document.getElementById('mainLayout').style.flex = '1'; document.getElementById('mainLayout').style.minHeight = '0';
+      document.getElementById('compareBtn').style.display = '';
+      document.getElementById('closeBtn').style.display = '';
+      buildSectionList();
+      setStatus(`Loaded: ${file.name}  |  ${flagSections.length} flag sections  |  ${filenames.length} section-3 filenames`, 'ok');
+    } catch(err) {
+      setStatus('Parse error: ' + err.message, 'err');
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+document.getElementById('fileInput').onchange = e => {
+  if (e.target.files[0]) loadFile(e.target.files[0]);
+};
+
+// Drag & drop
+const dz = document.getElementById('dropZone');
+document.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('over'); });
+document.addEventListener('dragleave', () => dz.classList.remove('over'));
+document.addEventListener('drop', e => {
+  e.preventDefault();
+  dz.classList.remove('over');
+  const f = e.dataTransfer.files[0];
+  if (f) loadFile(f);
+});
+
+// MDLS/MSET live hints
+document.getElementById('editME').addEventListener('input', function() {
+  const idx = parseInt(this.value);
+  document.getElementById('meName').textContent = filenames[idx] || '(unknown)';
+});
+document.getElementById('editME').addEventListener('change', function() {
+  const idx = parseInt(this.value);
+  document.getElementById('meName').textContent = filenames[idx] || '(unknown)';
+});
+document.getElementById('editMV').addEventListener('input', function() {
+  const idx = parseInt(this.value);
+  document.getElementById('mvName').textContent = filenames[idx] || '(unknown)';
+});
+document.getElementById('editMV').addEventListener('change', function() {
+  const idx = parseInt(this.value);
+  document.getElementById('mvName').textContent = filenames[idx] || '(unknown)';
+});
+
+// ── ARD Compare ───────────────────────────────────────────
+document.getElementById('compareInput').onchange = function(e) {
+  const f = e.target.files[0];
+  if (!f) return;
+  const reader = new FileReader();
+  reader.onload = ev => runCompare(new Uint8Array(ev.target.result), f.name);
+  reader.readAsArrayBuffer(f);
+  e.target.value = '';
+};
+
+function runCompare(patchedData, patchedName) {
+  const orig = new Uint8Array(fileData);
+  const patched = patchedData;
+  const results = [];
+  let errors = 0, warnings = 0;
+
+  function ok(msg)   { results.push(`<div style="color:var(--green)">✔ ${msg}</div>`); }
+  function err(msg)  { results.push(`<div style="color:var(--red)">✘ ${msg}</div>`); errors++; }
+  function warn(msg) { results.push(`<div style="color:var(--yellow)">⚠ ${msg}</div>`); warnings++; }
+  function info(msg) { results.push(`<div style="color:var(--muted)">· ${msg}</div>`); }
+
+  document.getElementById('cmpOrigName').textContent  = fileName;
+  document.getElementById('cmpOrigSize').textContent  = `${orig.length.toLocaleString()} bytes`;
+  document.getElementById('cmpPatchName').textContent = patchedName;
+  document.getElementById('cmpPatchSize').textContent = `${patched.length.toLocaleString()} bytes`;
+
+  const sizeDiff = patched.length - orig.length;
+  if (sizeDiff === 0)       info(`File size unchanged (${orig.length.toLocaleString()} bytes)`);
+  else if (sizeDiff > 0)    info(`File grew by ${sizeDiff} bytes — expected if entities/filenames were added`);
+  else                      warn(`File shrank by ${Math.abs(sizeDiff)} bytes — unexpected`);
+
+  // ── Header checks ──
+  results.push(`<div style="color:var(--accent);margin-top:12px;font-family:'Orbitron',monospace;font-size:9px;letter-spacing:2px">HEADER</div>`);
+
+  const origNN  = u32(orig,    0);
+  const patchNN = u32(patched, 0);
+  if (origNN === patchNN) ok(`Section count unchanged: ${patchNN}`);
+  else err(`Section count changed: orig=${origNN} patched=${patchNN} — CORRUPT`);
+
+  // +0x04 must not change
+  const origU4  = u32(orig,    4);
+  const patchU4 = u32(patched, 4);
+  if (origU4 === patchU4) ok(`Header +0x04 unchanged (0x${origU4.toString(16).toUpperCase()})`);
+  else err(`Header +0x04 CHANGED: orig=0x${origU4.toString(16).toUpperCase()} patched=0x${patchU4.toString(16).toUpperCase()} — this will crash the game`);
+
+  // Section offset table — check all non-zero offsets are within bounds
+  results.push(`<div style="color:var(--accent);margin-top:12px;font-family:'Orbitron',monospace;font-size:9px;letter-spacing:2px">SECTION OFFSETS</div>`);
+  let offsetErrors = 0;
+  for (let i = 0; i < patchNN; i++) {
+    const offOrig   = u32(orig,    8 + i*4);
+    const offPatch  = u32(patched, 8 + i*4);
+    if (offPatch === 0 && offOrig === 0) continue;
+    if (offPatch !== 0 && offPatch >= patched.length) {
+      err(`Section ${i} offset 0x${offPatch.toString(16).toUpperCase()} out of bounds (file is ${patched.length} bytes)`);
+      offsetErrors++;
+    } else if (offOrig !== offPatch) {
+      info(`Section ${i} offset shifted: 0x${offOrig.toString(16).toUpperCase()} → 0x${offPatch.toString(16).toUpperCase()} (+${offPatch-offOrig})`);
+    }
+  }
+  if (offsetErrors === 0) ok('All section offsets within bounds');
+
+  // ── Filename section ──
+  results.push(`<div style="color:var(--accent);margin-top:12px;font-family:'Orbitron',monospace;font-size:9px;letter-spacing:2px">FILENAME SECTION</div>`);
+  const s3orig  = u32(orig,    8 + 3*4);
+  const s3patch = u32(patched, 8 + 3*4);
+  // count filenames in each
+  function countFilenames(buf, start) {
+    let end = buf.length;
+    const nn = u32(buf, 0);
+    for (let i = 4; i < nn; i++) {
+      const o = u32(buf, 8 + i*4);
+      if (o !== 0 && o !== start) { end = o; break; }
+    }
+    return Math.floor((end - start) / 32);
+  }
+  const origFN  = countFilenames(orig,    s3orig);
+  const patchFN = countFilenames(patched, s3patch);
+  if (origFN === patchFN)   ok(`Filename count unchanged: ${patchFN}`);
+  else if (patchFN > origFN) ok(`Filename count: ${origFN} → ${patchFN} (+${patchFN-origFN} added)`);
+  else warn(`Filename count decreased: ${origFN} → ${patchFN} — entries were removed`);
+
+  // ── Flag sections ──
+  results.push(`<div style="color:var(--accent);margin-top:12px;font-family:'Orbitron',monospace;font-size:9px;letter-spacing:2px">FLAG SECTIONS (entity counts)</div>`);
+  let entityErrors = 0;
+  for (let si = 5; si < patchNN; si++) {
+    const ssO = u32(orig,    8 + si*4);
+    const ssP = u32(patched, 8 + si*4);
+    if (!ssO || !ssP) continue;
+    if (ssP + 8 > patched.length) { err(`Section ${si} starts out of bounds`); entityErrors++; continue; }
+
+    const nnSubO = u32(orig,    ssO);
+    const nnSubP = u32(patched, ssP);
+    if (nnSubP < 1 || nnSubP > 10) continue;
+    if (nnSubO !== nnSubP) { warn(`Section ${si} subsection count changed: ${nnSubO} → ${nnSubP}`); }
+
+    const sub0relO = u32(orig,    ssO + 4);
+    const sub0relP = u32(patched, ssP + 4);
+    const sub0O = ssO + sub0relO;
+    const sub0P = ssP + sub0relP;
+    if (sub0P + 4 > patched.length) { err(`Section ${si} subsection 0 out of bounds`); entityErrors++; continue; }
+
+    const nnEntO = u32(orig,    sub0O);
+    const nnEntP = u32(patched, sub0P);
+
+    // Validate sub0rel unchanged (it's relative, should never change)
+    if (sub0relO !== sub0relP) {
+      err(`Section ${si} subsection-0 relative offset changed: 0x${sub0relO.toString(16)} → 0x${sub0relP.toString(16)} — CORRUPT`);
+      entityErrors++;
+    } else if (nnEntP !== nnEntO) {
+      ok(`Section ${si}: entity count ${nnEntO} → ${nnEntP} (+${nnEntP - nnEntO})`);
+    } else {
+      // Count how many bytes differ within this section's entity block
+      const blockSize = nnEntP * 0x78;
+      let diffBytes = 0;
+      for (let b = 0; b < blockSize; b++) {
+        if ((patched[sub0P + 4 + b] ?? 0) !== (orig[sub0O + 4 + b] ?? 0)) diffBytes++;
+      }
+      if (diffBytes > 0) info(`Section ${si}: ${nnEntP} entities, ${diffBytes} bytes changed`);
+    }
+  }
+  if (entityErrors === 0) ok('All flag section structures valid');
+
+  // ── Verdict ──
+  const verdict = document.getElementById('cmpVerdict');
+  if (errors > 0) {
+    verdict.textContent = `${errors} ERROR${errors>1?'S':''}`;
+    verdict.style.color = 'var(--red)';
+    verdict.style.borderColor = 'var(--red)';
+  } else if (warnings > 0) {
+    verdict.textContent = `${warnings} WARNING${warnings>1?'S':''}`;
+    verdict.style.color = 'var(--yellow)';
+    verdict.style.borderColor = 'var(--yellow)';
+  } else {
+    verdict.textContent = 'LOOKS GOOD';
+    verdict.style.color = 'var(--green)';
+    verdict.style.borderColor = 'var(--green)';
+  }
+
+  document.getElementById('cmpResults').innerHTML = results.join('');
+  document.getElementById('comparePanel').style.display = 'block';
+}
+
+// ── Session state (persist across editor switches) ─────────
+function saveStateAndNav(e, url) {
+  e.preventDefault();
+  if (workData && fileName) {
+    try {
+      let bin = ''; for (let i = 0; i < workData.length; i++) bin += String.fromCharCode(workData[i]);
+      sessionStorage.setItem('ardState', JSON.stringify({ fileName, data: btoa(bin) }));
+    } catch(se) {
+      // Quota exceeded — store just the filename as a hint, binary won't be available
+      try { sessionStorage.setItem('ardState', JSON.stringify({ fileName, data: null })); } catch(e2) {}
+      setStatus('Warning: file too large to persist session — switching editors will not restore this file', 'warn');
+    }
+  } else {
+    sessionStorage.removeItem('ardState');
+  }
+  window.location.href = url + (url.includes('?') ? '&' : '?') + 'restore=1';
+}
+
+(function restoreArdState() {
+  if (!new URLSearchParams(window.location.search).has('restore')) return;
+  try {
+    const raw = sessionStorage.getItem('ardState');
+    if (!raw) return;
+    const state = JSON.parse(raw);
+    if (!state.data) return;
+    const bin = atob(state.data);
+    const buf = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
+    loadFile(new File([new Blob([buf])], state.fileName));
+  } catch(e) {}
+})();
+</script>
+</body>
+</html>
