@@ -108,3 +108,41 @@ Below is a real example of a EVDL script that continuously scales an object up a
 [ 7978]  08000018  syscall         8                 ; Set_wait_timer
 
 [ 7979]  F0FFFF02  jmp             -16               ; → PC 7963
+```
+
+
+## Traverse Town (Post-Final Boss) EVDL Files
+
+The following `.evdl` files are loaded in **Traverse Town after defeating the final boss**.  
+This is useful for identifying which scripts control each room in the endgame state.
+
+| File | Location |
+|------|---------|
+| `tw01_ard5.evdl` | 1st District |
+| `tw11_ard0.evdl` | Accessory Shop |
+| `tw12_ard0.evdl` | Item Workshop |
+| `tw10_ard2.evdl` | Item Shop |
+| `tw13_ard0.evdl` | Geppetto's House |
+| *(uses ARD EVDL)* | 2nd District |
+| `tw08_ard19.evdl` | Hallway |
+| `tw06_ard19.evdl` | Green Room |
+| `tw07_ard19.evdl` | Red Room |
+| `tw18_ard19.evdl` | Gizmo Shop |
+| `tw17_ard0.evdl` | Dalmatian's House |
+| `tw16_ard0.evdl` | Living Room |
+| `tw15_ard0.evdl` | Dining Room |
+| `tw14_ard0.evdl` | Dalmatian's Den |
+| `tw05_ard19.evdl` | Alleyway |
+| `tw23_ard0.evdl` | Secret Waterway |
+| `tw20_ard0.evdl` | Magician's Study |
+| `tw09_ard0.evdl` | Mystical House |
+| `tw25_ard19.evdl` | 3rd District |
+| `tw26_ard4.evdl` | Small House |
+
+---
+
+### Notes
+
+- These scripts represent the **post-game world state**
+- Depending on the game language it can be any of the languages but for english and international game uses the UK evdl files  
+- Some areas reuse EVDL from their ARD instead of a unique file
