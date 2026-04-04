@@ -111,6 +111,71 @@ Below is a real example of a EVDL script that continuously scales an object up a
 ```
 
 
+Below is another real example of a EVDL script that opens message when reaction command is pressed:
+
+```asm
+
+  [ 2528]  07000409  push            0x40007           ; 262151
+  [ 2529]  0A000018  syscall         10                ; Set_char_ID
+  [ 2530]  96000009  push            0x96              ; 150
+  [ 2531]  C7000018  syscall         199               ; Set_command_check_range
+  [ 2532]  10000005  yield           0x10            
+  [ 2533]  01000009  push            0x1             
+  [ 2534]  02000003  beqz            +2                ; → PC 2536
+  [ 2535]  FEFFFF02  jmp             -2                ; → PC 2533
+  [ 2536]  10000005  yield           0x10            
+  [ 2537]  10000005  yield           0x10            
+  [ 2538]  01000015  push_cond       0x1             
+  [ 2539]  7A010018  syscall         378               ; Make_operable
+  [ 2540]  FF010018  syscall         511               ; Enter_event_mode
+  [ 2541]  73000018  syscall         115               ; Command_display_off
+  [ 2542]  71000018  syscall         113               ; Gauge_off
+  [ 2543]  01000009  push            0x1             
+  [ 2544]  08000018  syscall         8                 ; Set_wait_timer
+  [ 2545]  07000009  push            0x7             
+  [ 2546]  08000009  push            0x8             
+  [ 2547]  02000009  push            0x2             
+  [ 2548]  04000018  syscall         4                 ; Set_window_size
+  [ 2549]  07000009  push            0x7             
+  [ 2550]  06000009  push            0x6             
+  [ 2551]  05000018  syscall         5                 ; Set_window_type
+  [ 2552]  07000009  push            0x7             
+  [ 2553]  00000009  push            0x0             
+  [ 2554]  06000018  syscall         6                 ; Set_window_opening_speed
+  [ 2555]  07000009  push            0x7             
+  [ 2556]  00000009  push            0x0             
+  [ 2557]  53000018  syscall         83                ; Set_window_close_speed
+  [ 2558]  07000009  push            0x7             
+  [ 2559]  00000009  push            0x0             
+  [ 2560]  50000018  syscall         80                ; Set_window_tail_type
+  [ 2561]  01000009  push            0x1             
+  [ 2562]  08000018  syscall         8                 ; Set_wait_timer
+  [ 2563]  07000009  push            0x7             
+  [ 2564]  49000009  push            0x49              ; 73
+  [ 2565]  DC000009  push            0xDC              ; 220
+  [ 2566]  05000001  alu             and             
+  [ 2567]  96000009  push            0x96              ; 150
+  [ 2568]  05000001  alu             and             
+  [ 2569]  6D010018  syscall         365               ; Set_window_width_auto
+  [ 2570]  07000009  push            0x7             
+  [ 2571]  00000018  syscall         0                 ; Open_window
+  [ 2572]  07000009  push            0x7             
+  [ 2573]  49000009  push            0x49              
+  [ 2574]  01000018  syscall         1                 ; Display_message  0x49
+  [ 2575]  07000009  push            0x7             
+  [ 2576]  6B000018  syscall         107               ; Wait_message_end_ID
+  [ 2577]  07000009  push            0x7             
+  [ 2578]  02000018  syscall         2                 ; Close_window
+  [ 2579]  00020018  syscall         512               ; Exit_event_mode
+  [ 2580]  70000018  syscall         112               ; Gauge_on
+  [ 2581]  72000018  syscall         114               ; Command_display_on
+  [ 2582]  50020018  syscall         592               ; Remove_invincibility
+  [ 2583]  01000015  push_cond       0x1             
+  [ 2584]  79010018  syscall         377               ; Make_inoperable
+  [ 2585]  10000005  yield           0x10        
+```
+
+
 ## Traverse Town (Post-Final Boss) EVDL Files
 
 The following `.evdl` files are loaded in **Traverse Town after defeating the final boss**.  
