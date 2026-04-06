@@ -603,3 +603,142 @@
 | 598 | 0x256 | Set Polygon Attribute |
 | 599 | 0x257 | Set Polygon Kind |
 | 600 | 0x258 | Change Map Effect Scale |
+| 601 | 0x259 | Clear Map Effect
+| 602 | 0x25A | Change Map Effect Start Frame
+| 603 | 0x25B | End Map Effect Loop
+| 604 | 0x25C | Bind Map Effect To Bone
+| 605 | 0x25D | Display Message From Gift Table
+| 606 | 0x25E | Change Char Color From Map Table
+| 607 | 0x25F | Load All Enemy SE
+| 608 | 0x260 | Play Object Effect Once
+| 609 | 0x261 | Start Weapon Effect
+| 610 | 0x262 | Clear Weapon Effect
+| 611 | 0x263 | Change Permanent Effect Color
+| 612 | 0x264 | Start Map Change Rewrite Set
+| 613 | 0x265 | Get Char Level
+| 614 | 0x266 | Get BG Color R
+| 615 | 0x267 | Get BG Color G
+| 616 | 0x268 | Get BG Color B
+| 617 | 0x269 | Set Object BG Color
+| 618 | 0x26A | Extract Set BG Color
+| 619 | 0x26B | Bind Effect To Null
+| 620 | 0x26C | Erase Weak Enemies
+| 621 | 0x26D | Enable Blur No Update
+| 622 | 0x26E | Check Object Touching Zone
+| 623 | 0x26F | Widescreen On Frame
+| 624 | 0x270 | Widescreen Off Frame
+| 625 | 0x271 | Set Special Command Range
+| 626 | 0x272 | Change Appear Flag
+| 627 | 0x274 | Gummy Shop Buy
+| 628 | 0x275 | Gummy Shop Sell
+| 629 | 0x279 | Set Hercules Victory Flag
+| 630 | 0x27A | Get Hercules Victory Flag
+| 631 | 0x27B | Set Magic Name Message Multi
+| 632 | 0x27C | Change Char Action
+| 633 | 0x27D | Play Effect Bound Bone 2
+| 634 | 0x27E | Get Dalmatians Collected
+| 635 | 0x27F | Show Feel Icon
+| 636 | 0x280 | Hide Feel Icon
+| 637 | 0x281 | Speed Fix Move No Turn
+| 638 | 0x282 | Load BGM On Map Change
+| 639 | 0x283 | No BGM Load On Map Change
+| 640 | 0x284 | Get Item Type
+| 641 | 0x285 | Get Owned Money
+| 642 | 0x286 | Wait Hercules Ranking Close
+| 643 | 0x287 | Play Battle Voice
+| 644 | 0x288 | Enable Gummies In Item Menu
+| 645 | 0x289 | Get Counter Value
+| 646 | 0x28A | Get Timer Value
+| 647 | 0x28B | Restore Music Fadein
+| 648 | 0x28C | Play Music Fadein
+| 649 | 0x28E | Apply Effect To Bone Pos
+| 650 | 0x28F | Rotate Effect To Bone Angle
+| 651 | 0x290 | Worldmap Test
+| 652 | 0x291 | Load Weapon
+| 653 | 0x292 | Wait Weapon Load
+| 654 | 0x293 | Fade Out SE
+| 655 | 0x294 | Show Minigame Info
+| 656 | 0x295 | Hide Minigame Info
+| 657 | 0x296 | End DH Stage Destruction
+| 658 | 0x2A1 | Synthesis Shop Menu Open
+| 659 | 0x2A6 | Minigame Limit On
+| 660 | 0x2A7 | Minigame Limit Off
+| 661 | 0x2A8 | Cancel Ignore Sound
+| 662 | 0x2A9 | Set Jiminy Memo Flag
+| 663 | 0x2AA | Get Jiminy Memo Flag
+| 664 | 0x2AB | Equip Weapon
+| 665 | 0x2AC | Equip Accessory
+| 666 | 0x2AD | Equip Ability
+| 667 | 0x2B1 | Get Enemies Killed 2
+| 668 | 0x2B2 | Get Enemies Killed All
+| 669 | 0x2B4 | Get Hercules Team
+| 670 | 0x2B5 | Get Hercules Ranking
+| 671 | 0x2B7 | Scale Window From Gift
+| 672 | 0x2B8 | Push Actor HP
+| 673 | 0x2B9 | Push Actor MP
+| 674 | 0x2BA | Play Effect Bound Bone 3
+| 675 | 0x2BB | Play Effect Bound Bone 4
+| 676 | 0x2BC | Enable Flight
+| 677 | 0x2BD | Disable Flight
+| 678 | 0x2BE | Enable Polygon Touch Event
+| 679 | 0x2BF | Disable Polygon Touch Event
+| 680 | 0x2C0 | Get Mapobj BG Color Frames
+| 681 | 0x2C1 | Extract Set BG Color Frames
+| 682 | 0x2C2 | Apply Effect To Bone Pos 2
+| 683 | 0x2C3 | Rotate Effect To Bone Angle 2
+| 684 | 0x2C4 | Wait Button Press
+| 685 | 0x2C5 | Gummi Ship Event Message
+| 686 | 0x2C6 | Stop All Enemy Scripts
+| 687 | 0x2C7 | Run All Enemy Scripts
+| 688 | 0x2C8 | Gummi Ship Tutorial
+| 689 | 0x2C9 | Get Sora Gameover Motion
+| 690 | 0x2CA | Load System Music
+| 691 | 0x2CB | Wait System Music Load
+| 692 | 0x2CC | Load Nightmare Effects
+| 693 | 0x2CD | Wait Nightmare Effects Load
+| 694 | 0x2CE | Get Equipped Weapon
+| 695 | 0x2CF | Disable Battle Field Music Switch
+| 696 | 0x2D0 | Enable Battle Field Music Switch
+| 697 | 0x2D1 | Beevsetstickval
+| 698 | 0x2D2 | Check Weapon Displayed
+| 699 | 0x2D3 | Slow Wait
+| 700 | 0x2D4 | Load System Music 2
+| 701 | 0x2D5 | Restore BGM 2
+| 702 | 0x2D6 | Restore Music Fadein 2
+| 703 | 0x2D7 | Set Shadow Steal Flag
+| 704 | 0x2D8 | Get Synthesiser Progress
+| 705 | 0x2D9 | Set BG Color To Drawing
+| 706 | 0x2DA | Stop SE 3D
+| 707 | 0x2DB | Color Change No Invalidate Floor
+| 708 | 0x2DC | Disable Ability
+| 709 | 0x2DD | Unlock Ability Disable
+| 710 | 0x2DE | Load Map Team Effect
+| 711 | 0x2DF | Fill Gummy Parts
+| 712 | 0x2E0 | Beevcheckwait
+| 713 | 0x2E1 | Get Pad Buttons 2
+| 714 | 0x2E2 | Show Party Weapons
+| 715 | 0x2E3 | Hide Party Weapons
+| 716 | 0x2E4 | Change Raft Name Highwind
+| 717 | 0x2E5 | Message Full Gummy Set
+| 718 | 0x2E6 | Get Player Continues Entering Map
+| 719 | 0x2E7 | Set Minigame Played Flag
+| 720 | 0x2E8 | Check Shared Ability Taken
+| 721 | 0x2E9 | Wmevcheckobjmotion
+| 722 | 0x2EA | Get Treasure Chest Full Flag
+| 723 | 0x2EB | Check Bag Item Count Only
+| 724 | 0x2EC | Enemy BG Impact On
+| 725 | 0x2ED | Enemy BG Impact Off
+| 726 | 0x2EE | Wmevstartwintexanime 2
+| 727 | 0x2EF | Show Battle Counter Ending
+| 728 | 0x2F0 | Check Bag Item Count 2
+| 729 | 0x2F1 | Get Window X
+| 730 | 0x2F2 | Get Window Y
+| 731 | 0x2F3 | Check Expert Mode
+| 732 | 0x2F4 | White In 3D
+| 733 | 0x2F5 | White Out 3D
+| 734 | 0x2F6 | Check Easy Mode
+| 735 | 0x2F7 | Set Event Skip Flag
+| 736 | 0x2F8 | Get Event Skip Flag
+| 737 | 0x2F9 | Open Event Skip Menu
+| 738 | 0x2FA | Get Event Skip Menu Selection
+| 739 | 0x2FB | Get Jiminy Memo Complete
