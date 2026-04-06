@@ -184,8 +184,6 @@ For a complete reference, see [ARD/EVDL/BINL Mapping](docs/ard_evdl_binl.md) whi
 
 ---
 
----
-
 ## Op Code and Syscall References
 
 - [EV Opcodes](docs/ev_opcode.md)
