@@ -176,38 +176,23 @@ Below is another real example of a EVDL script that opens message when reaction 
 ```
 
 
-## Traverse Town (Post-Final Boss) EVDL Files
+---
 
-The following `.evdl` files are loaded in **Traverse Town after defeating the final boss**.  
-This is useful for identifying which scripts control each room in the endgame state.
+## ARD to EVDL to BINL Mappings
 
-| File | Location |
-|------|---------|
-| `tw01_ard5.evdl` | 1st District |
-| `tw11_ard0.evdl` | Accessory Shop |
-| `tw12_ard0.evdl` | Item Workshop |
-| `tw10_ard2.evdl` | Item Shop |
-| `tw13_ard0.evdl` | Geppetto's House |
-| *(uses ARD EVDL)* | 2nd District |
-| `tw08_ard19.evdl` | Hallway |
-| `tw06_ard19.evdl` | Green Room |
-| `tw07_ard19.evdl` | Red Room |
-| `tw18_ard19.evdl` | Gizmo Shop |
-| `tw17_ard0.evdl` | Dalmatian's House |
-| `tw16_ard0.evdl` | Living Room |
-| `tw15_ard0.evdl` | Dining Room |
-| `tw14_ard0.evdl` | Dalmatian's Den |
-| `tw05_ard19.evdl` | Alleyway |
-| `tw23_ard0.evdl` | Secret Waterway |
-| `tw20_ard0.evdl` | Magician's Study |
-| `tw09_ard0.evdl` | Mystical House |
-| `tw25_ard19.evdl` | 3rd District |
-| `tw26_ard4.evdl` | Small House |
+For a complete reference, see [ARD/EVDL/BINL Mapping](docs/ard_evdl_binl.md) which contains all ARD to EVDL to BINL mappings.
+
+---
+
+## Op Code and Syscall References
+
+- [EV Opcodes](docs/ev_opcode.md)
+- [Syscalls](docs/syscall.md)
+- [ALU Operators](docs/alu.md)
 
 ---
 
 ### Notes
 
-- These scripts represent the **post-game world state**
 - Depending on the game language it can be any of the languages but for english and international game uses the UK evdl files  
 - Some areas reuse EVDL from their ARD instead of a unique file
