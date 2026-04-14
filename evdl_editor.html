@@ -373,6 +373,17 @@ function fmtStream(stream,abs,label){
       skipPcs[bs]=lbl;
     }else p2++;
   }
+  // Collect in-stream branch targets so we can emit @labels
+  const branchTargets=new Set();
+  for(let i=0;i<n;i++){
+    const oc=stream[i*4+3];
+    if(oc===2||oc===3){
+      const iv=(stream[i*4]|(stream[i*4+1]<<8)|(stream[i*4+2]<<16))>>>0;
+      const t=i+sign24(iv);
+      if(t>=0&&t<n)branchTargets.add(t);
+    }
+  }
+
   // Pre-build script index map for init_call/await_call annotations
   // subScript[N] = {scriptNum, charId} for the Nth script in this stream
   const subScriptMap = {};
@@ -394,9 +405,10 @@ function fmtStream(stream,abs,label){
   for(let pc=0;pc<n;pc++){
     const b=stream.slice(pc*4,pc*4+4);
     const iv=b[0]|(b[1]<<8)|(b[2]<<16),oc=b[3];
-    const hx=Array.from(b).map(x=>x.toString(16).toUpperCase().padStart(2,'0')).join('');
+    let hx=Array.from(b).map(x=>x.toString(16).toUpperCase().padStart(2,'0')).join('');
     if(pc in skipPcs){L.push(`  [${String(pc).padStart(5)}]  ${''.padEnd(8)}  ; ${skipPcs[pc]}`);prevOc=null;continue;}
     if(skipSet.has(pc))continue;
+    if(branchTargets.has(pc))L.push(`@pc_${pc}:`);
     if(isSH(pc,oc,iv,prevOc)){
       si++;
       L.push('',`; ${'─'.repeat(72)}`,`; Script ${si}  |  ${iv} subscript(s)  |  PC ${pc}  |  file 0x${(abs+pc*4).toString(16).toUpperCase()}`,`; ${'─'.repeat(72)}`,'');
@@ -405,7 +417,7 @@ function fmtStream(stream,abs,label){
     const opname=OPCODES[oc]||`OP_${oc.toString(16).toUpperCase().padStart(2,'0')}`;
     let ostr='',cmt='';
     if(oc===1){ostr=ALU_OPS[iv]||`sub_${iv}`;}
-    else if(oc===2||oc===3){const s=sign24(iv),t=pc+s;ostr=`${s>=0?'+':''}${s}`;cmt=`→ PC ${t}`;}
+    else if(oc===2||oc===3){const s=sign24(iv),t=pc+s;if(branchTargets.has(t)){ostr=`@pc_${t}`;cmt=`→ PC ${t}`;hx='????????';}else{ostr=`${s>=0?'+':''}${s}`;cmt=`→ PC ${t}`;}}
     else if(oc===24){const nm=SYSCALLS[iv]||'';ostr=String(iv);cmt=nm;}
     else if([12,13,14,15,16,17,30,31].includes(oc)){const r=memOp(iv);ostr=r.d;cmt=r.c;}
     else if(oc===10||oc===11){ostr=`[${iv}]`;}
